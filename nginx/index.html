@@ -1,0 +1,120 @@
+<html>
+<body>
+<style>
+  C {
+     font-size: 600px;
+  }
+
+  B {
+     font-size: 20px
+  }
+  button {
+    height: 40px
+  }
+  input.button {
+    -webkit-appearance: button;
+    -moz-appearance: button;
+    appearance: button;
+    text-decoration: none;
+    color: gray;
+  }
+  div.relative {
+	  position: relative;
+	  left: 68px;
+	  border: 3px solid #73AD21;
+  }
+</style>
+<audio id="every10laps">
+	<source src="media/Cheer.wav" type="audio/wav">
+	<!--
+	<source src="horse.mp3" type="audio/mpeg">
+	-->
+</audio>
+<div class='relative'>
+	<div><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></th>
+<tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
+</div>
+<script>
+            var isMobile = {
+    		Android: function() {
+        		return navigator.userAgent.match(/Android/i);
+    		},
+    		BlackBerry: function() {
+        		return navigator.userAgent.match(/BlackBerry/i);
+    		},
+    		iOS: function() {
+        		return navigator.userAgent.match(/iPhone|iPad|iPod/i);
+    		},
+    		Opera: function() {
+        		return navigator.userAgent.match(/Opera Mini/i);
+    		},
+    		Windows: function() {
+        		return navigator.userAgent.match(/IEMobile/i) || navigator.userAgent.match(/WPDesktop/i);
+    		},
+    		any: function() {
+        		return (isMobile.Android() || isMobile.BlackBerry() || isMobile.iOS() || isMobile.Opera() || isMobile.Windows());
+    		}
+	    };
+            var counterText = document.getElementById('_COUNTER_');
+            var start_txt = document.getElementById('start_stop_action');
+            var rest_txt = document.getElementById('reset_action');
+            var start_btn = document.getElementById('B1');
+            var rest_btn = document.getElementById('B2');
+            if (isMobile.any()) {
+		counterText.style.fontSize = "400px";
+		start_txt.style.fontSize = "20px";
+		rest_txt.style.fontSize = "20px"
+		//start_btn.style.height = "800px";
+		//reset_btn.style.height = "800px";
+            }
+            console.log("Creating websocket ...");
+            var ws = new WebSocket("ws://192.168.1.11:5678/");
+            function start_stop() {
+		if (start_txt.innerHTML == "Start") {
+			start_txt.innerHTML = "Stop&nbsp;";
+			start_txt.color = "red";
+			act = "start";
+		} else {
+			start_txt.innerHTML = "Start";
+			act = "stop";
+		}
+                if(ws)ws.send(act);
+	    }
+            function reset() {
+		if(ws)ws.send('reset');
+	    }
+            function gone() {
+		if(ws) {
+		     ws.send('exit');
+		     ws.close();
+		     ws = null;
+		}
+	    }
+            ws.onmessage = function (event) {
+		var laps = parseInt(event.data);
+		if (start_txt.innerHTML == "Start") {
+		    start_txt.innerHTML = "Stop"
+	        }
+		if (laps < 10) {
+		      txt = "000"+event.data;
+		} else if(laps < 100) {
+		      txt = "00"+event.data;
+		} else if(laps < 1000) {
+		      txt = "0"+event.data;
+		} else {
+		      txt = event.data;
+		}
+		    if (laps >0 && laps % 10 == 0) {
+			var sound = document.getElementById("every10laps");
+			sound.play();
+			counterText.style.color = "red";
+		} else {
+			counterText.style.color = "black";
+		}
+                counterText.innerText = txt;
+
+            };
+</script>
+
+</body>
+</html>
