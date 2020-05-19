@@ -85,8 +85,8 @@
             console.log("Creating websocket ...");
             var ws = new WebSocket("ws://192.168.1.11:5678/");
 	    function compute_pace() {
-		T = now.getTime()/1000;
 		now = new Date();
+		T = now.getTime()/1000;
 		elapsed  = T - Number(T0.value);
 		h = Math.round(elapsed/3600);
 		m = Math.round((elapsed%3600)/60);;
