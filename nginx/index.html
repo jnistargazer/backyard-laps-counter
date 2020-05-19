@@ -85,6 +85,7 @@
             var ws = new WebSocket("ws://192.168.1.11:5678/");
 	    function compute_pace() {
                 var T0 = document.getElementById('T0');
+		if (T0.value == "0") return;
                 var Laps = document.getElementById('Laps');
                 var dist_box = document.getElementById('Distance');
                 var time_box = document.getElementById('Time');
@@ -127,11 +128,6 @@
 			start_txt.innerHTML = "Stop&nbsp;";
 			start_txt.color = "red";
 			act = "start";
-		        now = new Date();
-		        T = now.getTime()/1000;
-			if (T0.value==0) {
-				T0.value = T.toString();
-			}
 		} else {
 			if (Laps.value>0) {
 	                    compute_pace();
@@ -173,15 +169,21 @@
 		} else {
 		      txt = event.data;
 		}
-	        compute_pace();
-		if (laps >0 && laps % 10 == 0) {
-			if (!played) {
+		if (laps>0) {
+			compute_pace();
+		        if (laps % 10 == 0) {
+			    if (!played) {
 			    //var sound = document.getElementById("every10laps");
 			    //sound.play();
-			    counterText.style.color = "red";
-			    played = true;
+			        counterText.style.color = "red";
+			        played = true;
+			    }
 			}
 		} else {
+                        var T0 = document.getElementById('T0');
+		        now = new Date();
+		        T = now.getTime()/1000;
+			T0.value = T.toString();
 			played = false;
 			counterText.style.color = "black";
 		}

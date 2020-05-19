@@ -59,6 +59,8 @@ class LapCounter(Thread):
            if not self.then:
                elapsed = 0
                self.then = now
+               # First motion detected
+               LapUpdate = True
            else:
                elapsed = now - self.then
            if elapsed >= 5:
