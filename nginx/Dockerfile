@@ -10,3 +10,4 @@ ADD cv-motion-detect.py /root/motion-detection/
 WORKDIR /var/www
 ADD index.html .
 ADD Cheer.wav media/
+RUN chown -R webmaster.webmaster media
