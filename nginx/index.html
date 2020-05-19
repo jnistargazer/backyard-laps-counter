@@ -157,12 +157,12 @@
 		} else {
 		      txt = event.data;
 		}
+	        compute_pace();
 		if (laps >0 && laps % 10 == 0) {
 			if (!played) {
 			    //var sound = document.getElementById("every10laps");
 			    //sound.play();
 			    counterText.style.color = "red";
-	                    compute_pace();
 			    played = true;
 			}
 		} else {

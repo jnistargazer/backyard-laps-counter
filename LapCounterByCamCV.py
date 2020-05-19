@@ -10,8 +10,10 @@ import random
 import websockets
 from websockets import WebSocketServerProtocol
 import CamMotionCV
+import argparse
  
 Start = False 
+LapUpdate = False 
 KeepRunning = True
 clients = set()
 Laps = -1
@@ -35,18 +37,19 @@ class CheerLeader(Thread):
                 time.sleep(1.0)
 
 class LapCounter(Thread):
-    def __init__(self, show=False, capture=False):
+    def __init__(self, show=False, capture=False, sensitivity=250):
         super().__init__()
         self.camera = None
         self.show = show
         self.capture = capture
+        self.sensitivity = sensitivity
         self.then = None
         #self.laps = -1
     def run(self):
-        self.camera = CamMotionCV.MotionDetector(src="picam",show=self.show, capture=self.capture)
+        self.camera = CamMotionCV.MotionDetector(src="picam",show=self.show, capture=self.capture, min_area=self.sensitivity)
         self.camera.detect_motion(self)
     def handle_motion(self,motion):
-        global Start, Laps
+        global Start, Laps, LapUpdate
         #print("Motion detected")
         if not Start:
             return None
@@ -63,6 +66,7 @@ class LapCounter(Thread):
                #self.laps += 1
                Laps += 1
                print("Lap #{}".format(Laps))
+               LapUpdate = True
                return Laps
         else:
            pass
@@ -110,9 +114,10 @@ async def update_client(client, laps):
           await unregister(client)
 
 async def producer_handler(wsock, path):
-    global KeepRunning, Start
+    global KeepRunning, LapUpdate
     while KeepRunning:
-        if Start:
+        if LapUpdate:
+            LapUpdate = False
             await asyncio.wait([update_client(client, Laps) for client in clients])
         else:
             await asyncio.sleep(0.5)
@@ -179,24 +184,25 @@ if __name__ == "__main__":
     capture = False
     # My backyard!! In meters
     LapLength = 33
-    nargs = len(sys.argv)
-    if nargs > 1:
-        opt = sys.argv[1]
-        if opt in ["--show", "--capture", "--lap-length"]:
-            if opt == "--show":
-                show = True
-            elif opt == "--capture":
-                capture = True
-            elif opt == "--lap-length":
-                if nargs > 2:
-                    LapLength = int(sys.argv[2])
-                else:
-                    print("Usage: {} [--show] [--capture] [--lap-length <number>]".format(sys.argv[0]))
-                    sys.exit(1)
+    aparser = argparse.ArgumentParser()
+    aparser.add_argument("-v", "--view", nargs="?", const="yes", default="no", help="Show video")
+    aparser.add_argument("-s", "--sensitivity", type=int, default=200, help="Motion detection sensitity (smaller number means more sensitive)")
+    aparser.add_argument("-c", "--capture", nargs="?", const="yes", default="no", help="capture photos for each lap")
+    aparser.add_argument("-l", "--lap-length", type=int, default=33, help="Length of a lap")
+    args = vars(aparser.parse_args())
+    print(args)
+    if args.get("view", None) == "yes":
+        show = True
+    if args.get("capture", None) == "yes":
+        capture = True
+    if args.get("lap-length", None):
+        LapLength = args.get("lap-length")
+    if args.get("sensitivity", None):
+        sensitivity = args.get("sensitivity")
 
 
     my_threads = []
-    counter = LapCounter(show=show, capture=capture)
+    counter = LapCounter(show=show, capture=capture, sensitivity=sensitivity)
     counter.start()
     my_threads.append(counter)
     #cheer = CheerLeader()
