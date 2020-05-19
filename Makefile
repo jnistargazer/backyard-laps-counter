@@ -1,2 +1,4 @@
 run:
-	python3 LapCounter-async-wait-for-motion.py
+	python3 LapCounterByCamCV.py
+ui: nginx/index.html
+	cd nginx && make

@@ -61,7 +61,7 @@ class LapCounter(Thread):
                self.then = now
            else:
                elapsed = now - self.then
-           if elapsed > 5:
+           if elapsed >= 5:
                self.then = now
                #self.laps += 1
                Laps += 1

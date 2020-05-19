@@ -36,10 +36,13 @@
 </audio>
 <div hidden=true><input id="T0" value=0></div>
 <div hidden=true><input id="Laps" value=0></div>
+<!--
 <div hidden=true><input id="Lap-Length" value=33></div>
+-->
 <div class='relative'>
 	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></tr>
 <tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
+<tr><td><D>Lap Length:</D></td><td><D id="Lap-Length">?</D><D> feet</D></td></tr>
 <tr><td><D>Distance:</D></td><td><D id="Distance">0</D></td></tr>
 <tr><td><D>Time:</D></td><td><D id="Time">0</D></td></tr>
 <tr><td><D>Pace:</D></td><td><D id="Pace">0</D></td><td></tr>
@@ -89,7 +92,7 @@
                 var lap_len_box = document.getElementById('Lap-Length');
 		var now = new Date();
 		var T = now.getTime()/1000;
-		lap_len = parseInt(lap_len_box.value);
+		lap_len = parseInt(lap_len_box.innerHTML);
 		laps = parseInt(Laps.value);
 		elapsed  = T - Number(T0.value);
 		h = Math.round(elapsed/3600);
@@ -102,13 +105,22 @@
 		distance = distance.toFixed(3)
 		dist_box.innerHTML = distance + " miles";
 		pace = Math.round(elapsed/distance);
-		pace = pace.toFixed(3)
-		pace_m = pace/60.0;
-		pace_m = pace_m.toFixed(0)
-		pace_s = pace%60;
-		pace_s = pace_s.toFixed(1)
-		pace_str = pace_m+":"+pace_s;
-		pace_box.innerHTML = pace_str + " per mile";
+		pace = pace.toFixed(3);
+		m = pace/60.0;
+		m = m.toFixed(0);
+		s = pace%60;
+		s = s.toFixed(1);
+		pace_str_royal = m+":"+s;
+		distance *= 1.609;
+		distance = distance.toFixed(3)
+		pace = Math.round(elapsed/distance)
+		pace = pace.toFixed(3);
+		m = pace/60.0;
+		m = m.toFixed(0);
+		s = pace%60;
+		s = s.toFixed(1);
+		pace_str_metrics = m+":"+s;
+		pace_box.innerHTML = pace_str_royal + "/mile (" + pace_str_metrics + "/km)";
             }
             function start_stop() {
 		if (start_txt.innerHTML == "Start") {
@@ -143,7 +155,7 @@
             ws.onmessage = function (event) {
 		if (event.data.indexOf("lap-length=")>=0) {
                     var lap_len_box = document.getElementById('Lap-Length');
-		    lap_len_box.value = event.data.substring(11);
+		    lap_len_box.innerHTML = event.data.substring(11);
 		    return;
 		}
 		var laps = parseInt(event.data);
