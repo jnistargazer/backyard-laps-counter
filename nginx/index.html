@@ -139,9 +139,6 @@
             ws.onmessage = function (event) {
 		var laps = parseInt(event.data);
 		Laps.value = laps;
-		if (start_txt.innerHTML == "Start") {
-		    start_txt.innerHTML = "Stop"
-	        }
 		if (laps < 10) {
 		      txt = "000"+event.data;
 		} else if(laps < 100) {
