@@ -84,8 +84,15 @@ class LapCounter(Thread):
  
 
 async def register(wsock):
-    global clients, Laps
-    clients.add((wsock,Laps))
+    global clients, Laps, LapLength
+    laps = Laps
+    clients.add((wsock,laps))
+    try:
+        await wsock.send("lap-length={}".format(LapLength))
+    except Exception as e:
+        #print(str(e))
+        print("Register: Client {} seems gone".format(client))
+        await unregister((wsock,laps))
 
 async def unregister(client):
     global clients
@@ -170,13 +177,22 @@ def exit_cleanup(sig, tmp):
 if __name__ == "__main__":
     show = False
     capture = False
-    if len(sys.argv) > 1:
+    # My backyard!! In meters
+    LapLength = 33
+    nargs = len(sys.argv)
+    if nargs > 1:
         opt = sys.argv[1]
-        if opt in ["--show", "--capture"]:
+        if opt in ["--show", "--capture", "--lap-length"]:
             if opt == "--show":
                 show = True
             elif opt == "--capture":
                 capture = True
+            elif opt == "--lap-length":
+                if nargs > 2:
+                    LapLength = int(sys.argv[2])
+                else:
+                    print("Usage: {} [--show] [--capture] [--lap-length <number>]".format(sys.argv[0]))
+                    sys.exit(1)
 
 
     my_threads = []

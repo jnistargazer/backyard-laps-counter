@@ -36,6 +36,7 @@
 </audio>
 <div hidden=true><input id="T0" value=0></div>
 <div hidden=true><input id="Laps" value=0></div>
+<div hidden=true><input id="Lap-Length" value=33></div>
 <div class='relative'>
 	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></tr>
 <tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
@@ -85,8 +86,11 @@
                 var dist_box = document.getElementById('Distance');
                 var time_box = document.getElementById('Time');
                 var pace_box = document.getElementById('Pace');
+                var lap_len_box = document.getElementById('Lap-Length');
 		var now = new Date();
 		var T = now.getTime()/1000;
+		lap_len = parseInt(lap_len_box.value);
+		laps = parseInt(Laps.value);
 		elapsed  = T - Number(T0.value);
 		h = Math.round(elapsed/3600);
 		m = Math.round((elapsed%3600)/60);;
@@ -94,7 +98,7 @@
 		s = s.toFixed(1);
 		time_str = h+" hours "+m+" minutes "+s + " seconds";
 		time_box.innerHTML = time_str;
-		distance = (Laps.value*33)/1609;
+		distance = (laps*lap_len)/1609.0;
 		distance = distance.toFixed(3)
 		dist_box.innerHTML = distance + " miles";
 		pace = Math.round(elapsed/distance);
@@ -102,7 +106,7 @@
 		pace_m = pace/60.0;
 		pace_m = pace_m.toFixed(0)
 		pace_s = pace%60;
-		pace_s = pace_s.toFixed(2)
+		pace_s = pace_s.toFixed(1)
 		pace_str = pace_m+":"+pace_s;
 		pace_box.innerHTML = pace_str + " per mile";
             }
@@ -137,6 +141,11 @@
 		}
 	    }
             ws.onmessage = function (event) {
+		if (event.data.indexOf("lap-length=")>=0) {
+                    var lap_len_box = document.getElementById('Lap-Length');
+		    lap_len_box.value = event.data.substring(11);
+		    return;
+		}
 		var laps = parseInt(event.data);
 		Laps.value = laps;
 		if (laps < 10) {
@@ -150,8 +159,8 @@
 		}
 		if (laps >0 && laps % 10 == 0) {
 			if (!played) {
-			    var sound = document.getElementById("every10laps");
-			    sound.play();
+			    //var sound = document.getElementById("every10laps");
+			    //sound.play();
 			    counterText.style.color = "red";
 	                    compute_pace();
 			    played = true;
