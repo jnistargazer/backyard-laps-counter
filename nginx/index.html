@@ -42,7 +42,7 @@
 <div class='relative'>
 	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></tr>
 <tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
-<tr><td><D>Lap Length:</D></td><td><D id="Lap-Length">?</D><D> feet</D></td></tr>
+<tr><td><D>Lap Length:</D></td><td><D id="Lap-Length">?</D><D id="Length-Unit">...</D></td></tr>
 <tr><td><D>Distance:</D></td><td><D id="Distance">0</D></td></tr>
 <tr><td><D>Time:</D></td><td><D id="Time">0</D></td></tr>
 <tr><td><D>Pace:</D></td><td><D id="Pace">0</D></td><td></tr>
@@ -101,7 +101,7 @@
 		s = s.toFixed(1);
 		time_str = h+" hours "+m+" minutes "+s + " seconds";
 		time_box.innerHTML = time_str;
-		distance = (laps*lap_len)/1609.0;
+		distance = (laps*lap_len)/5280.0;
 		distance = distance.toFixed(3)
 		dist_box.innerHTML = distance + " miles";
 		pace = Math.round(elapsed/distance);
@@ -155,7 +155,11 @@
             ws.onmessage = function (event) {
 		if (event.data.indexOf("lap-length=")>=0) {
                     var lap_len_box = document.getElementById('Lap-Length');
-		    lap_len_box.innerHTML = event.data.substring(11);
+		    l = parseInt(event.data.substring(11));
+		    f = l*3.28; 
+		    lap_len_box.innerHTML = f.toFixed(2);
+                    var lap_len_unit = document.getElementById('Length-Unit');
+		    lap_len_unit.innerHTML = " feet ("+l+" meters)";
 		    return;
 		}
 		var laps = parseInt(event.data);
