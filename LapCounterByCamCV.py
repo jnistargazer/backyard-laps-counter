@@ -35,20 +35,21 @@ class CheerLeader(Thread):
                 time.sleep(1.0)
 
 class LapCounter(Thread):
-    def __init__(self, show=False):
+    def __init__(self, show=False, capture=False):
         super().__init__()
         self.camera = None
         self.show = show
+        self.capture = capture
         self.then = None
         #self.laps = -1
     def run(self):
-        self.camera = CamMotionCV.MotionDetector(src="picam",show=self.show)
+        self.camera = CamMotionCV.MotionDetector(src="picam",show=self.show, capture=self.capture)
         self.camera.detect_motion(self)
     def handle_motion(self,motion):
         global Start, Laps
         #print("Motion detected")
         if not Start:
-            return
+            return None
         #print("Counting started")
         if motion:
            now = time.time()
@@ -62,8 +63,11 @@ class LapCounter(Thread):
                #self.laps += 1
                Laps += 1
                print("Lap #{}".format(Laps))
+               return Laps
         else:
            pass
+        return None
+
     def start_counting(self):
         global Start
         Start = True
@@ -72,6 +76,8 @@ class LapCounter(Thread):
         global Start
         Start = False
         self.last_time = None
+    def finish(self):
+        pass
     def reset_counter(self):
         #self.laps = 0
         Laps = 0
@@ -83,7 +89,6 @@ async def register(wsock):
 
 async def unregister(client):
     global clients
-    #print("A client unregistered: {}".format(client))
     clients.remove(client)
 
 async def update_client(client, laps):
@@ -113,6 +118,8 @@ async def commander(cmd):
        counter.start_counting()
     elif cmd == "stop":
        counter.stop_counting()
+    elif cmd == "finish":
+       counter.finish()
     elif cmd == "reset":
        counter.reset_counter()
     elif cmd == "exit":
@@ -162,13 +169,18 @@ def exit_cleanup(sig, tmp):
 
 if __name__ == "__main__":
     show = False
+    capture = False
     if len(sys.argv) > 1:
         opt = sys.argv[1]
-        if opt in ["--show"]:
-            show = True
+        if opt in ["--show", "--capture"]:
+            if opt == "--show":
+                show = True
+            elif opt == "--capture":
+                capture = True
+
 
     my_threads = []
-    counter = LapCounter(show=show)
+    counter = LapCounter(show=show, capture=capture)
     counter.start()
     my_threads.append(counter)
     #cheer = CheerLeader()

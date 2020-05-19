@@ -2,11 +2,14 @@
 <body>
 <style>
   C {
-     font-size: 600px;
+     font-size: 400px;
   }
 
   B {
      font-size: 20px
+  }
+  D {
+     font-size: 40px
   }
   button {
     height: 40px
@@ -21,6 +24,7 @@
   div.relative {
 	  position: relative;
 	  left: 68px;
+	  width: 800px;
 	  border: 3px solid #73AD21;
   }
 </style>
@@ -30,9 +34,15 @@
 	<source src="horse.mp3" type="audio/mpeg">
 	-->
 </audio>
+<div hidden=true><input id="T0" value=0></div>
+<div hidden=true><input id="Laps" value=0></div>
 <div class='relative'>
-	<div><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></th>
+	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></tr>
 <tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
+<tr><td><D>Distance:</D></td><td><D id="Distance">0</D></td></tr>
+<tr><td><D>Time:</D></td><td><D id="Time">0</D></td></tr>
+<tr><td><D>Pace:</D></td><td><D id="Pace">0</D></td><td></tr>
+</table>
 </div>
 <script>
             var isMobile = {
@@ -60,6 +70,11 @@
             var rest_txt = document.getElementById('reset_action');
             var start_btn = document.getElementById('B1');
             var rest_btn = document.getElementById('B2');
+            var T0 = document.getElementById('T0');
+            var Laps = document.getElementById('Laps');
+            var dist_box = document.getElementById('Distance');
+            var time_box = document.getElementById('Time');
+            var pace_box = document.getElementById('Pace');
             if (isMobile.any()) {
 		counterText.style.fontSize = "400px";
 		start_txt.style.fontSize = "20px";
@@ -69,12 +84,43 @@
             }
             console.log("Creating websocket ...");
             var ws = new WebSocket("ws://192.168.1.11:5678/");
+	    function compute_pace() {
+		T = now.getTime()/1000;
+		now = new Date();
+		elapsed  = T - Number(T0.value);
+		h = Math.round(elapsed/3600);
+		m = Math.round((elapsed%3600)/60);;
+		s = elapsed%60;
+		s = s.toFixed(1);
+		time_str = h+" hours "+m+" minutes "+s + " seconds";
+		time_box.innerHTML = time_str;
+		distance = (Laps.value*33)/1609;
+		distance = distance.toFixed(3)
+		dist_box.innerHTML = distance + " miles";
+		pace = Math.round(elapsed/distance);
+		pace = pace.toFixed(3)
+		pace_m = pace/60.0;
+		pace_m = pace_m.toFixed(0)
+		pace_s = pace%60;
+		pace_s = pace_s.toFixed(2)
+		pace_str = pace_m+":"+pace_s;
+		pace_box.innerHTML = pace_str + " per mile";
+            }
             function start_stop() {
 		if (start_txt.innerHTML == "Start") {
 			start_txt.innerHTML = "Stop&nbsp;";
 			start_txt.color = "red";
 			act = "start";
+		        T = now.getTime()/1000;
+		        now = new Date();
+			if (T0.value==0) {
+				T0.value = T.toString();
+			}
 		} else {
+			if (Laps.value>0) {
+	                    compute_pace();
+			}
+
 			start_txt.innerHTML = "Start";
 			act = "stop";
 		}
@@ -92,6 +138,7 @@
 	    }
             ws.onmessage = function (event) {
 		var laps = parseInt(event.data);
+		Laps.value = laps;
 		if (start_txt.innerHTML == "Start") {
 		    start_txt.innerHTML = "Stop"
 	        }
@@ -104,10 +151,11 @@
 		} else {
 		      txt = event.data;
 		}
-		    if (laps >0 && laps % 10 == 0) {
+		if (laps >0 && laps % 10 == 0) {
 			var sound = document.getElementById("every10laps");
 			sound.play();
 			counterText.style.color = "red";
+	                compute_pace();
 		} else {
 			counterText.style.color = "black";
 		}

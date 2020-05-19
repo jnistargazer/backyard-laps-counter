@@ -5,9 +5,10 @@ import time
 import cv2
 
 class MotionDetector:
-    def __init__(self, src="picam", show=False, min_area=250):
+    def __init__(self, src="picam", show=False, capture=False, min_area=250):
         self.src = src
         self.show = show
+        self.capture = capture
         self.min_area = min_area
         if self.src == "picam":
             self.vs = VideoStream(src=0).start()
@@ -61,7 +62,10 @@ class MotionDetector:
                 if not motion_start:
                     #print("Motion started")
                     motion_start = True
-                    motion_handler.handle_motion(True)
+                    ret = motion_handler.handle_motion(True)
+                    if ret is not None and self.capture:
+                        cv2.imwrite("./capture/cv-cap{}.jpg".format(ret),frame)
+                        cv2.imwrite("./capture/cv-cap-delta{}.jpg".format(ret),gray)
                     motions += 1
             else:
                 if motion_start:
@@ -77,9 +81,9 @@ class MotionDetector:
                 cv2.putText(frame, datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
                 (10, frame.shape[0] - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
                 # show the frame and record if the user presses a key
-                cv2.imshow("Security Feed", frame)
+                cv2.imshow("Scene", frame)
                 cv2.imshow("Thresh", thresh)
-                cv2.imshow("Frame Delta", frameDelta)
+                cv2.imshow("Diff", frameDelta)
                 key = cv2.waitKey(1) & 0xFF
                 # if the `q` key is pressed, break from the lop
                 if key == ord("q"):
