@@ -35,7 +35,6 @@
 	-->
 </audio>
 <div hidden=true><input id="T0" value=0></div>
-<div hidden=true><input id="Laps" value=0></div>
 <!--
 <div hidden=true><input id="Lap-Length" value=33></div>
 -->
@@ -74,6 +73,7 @@
             var rest_txt = document.getElementById('reset_action');
             var start_btn = document.getElementById('B1');
             var rest_btn = document.getElementById('B2');
+            var played = false;
             if (isMobile.any()) {
 		counterText.style.fontSize = "400px";
 		start_txt.style.fontSize = "20px";
@@ -83,19 +83,11 @@
             }
             console.log("Creating websocket ...");
             var ws = new WebSocket("ws://192.168.1.11:5678/");
-	    function compute_pace() {
-                var T0 = document.getElementById('T0');
-		if (T0.value == "0") return;
-                var Laps = document.getElementById('Laps');
+	    function compute_pace(laps, lap_len, elapsed) {
                 var dist_box = document.getElementById('Distance');
                 var time_box = document.getElementById('Time');
                 var pace_box = document.getElementById('Pace');
-                var lap_len_box = document.getElementById('Lap-Length');
 		var now = new Date();
-		var T = now.getTime()/1000;
-		lap_len = parseInt(lap_len_box.innerHTML);
-		laps = parseInt(Laps.value);
-		elapsed  = T - Number(T0.value);
 		h = Math.round(elapsed/3600);
 		m = Math.round((elapsed%3600)/60);;
 		s = elapsed%60;
@@ -129,10 +121,6 @@
 			start_txt.color = "red";
 			act = "start";
 		} else {
-			if (Laps.value>0) {
-	                    compute_pace();
-			}
-
 			start_txt.innerHTML = "Start";
 			act = "stop";
 		}
@@ -148,44 +136,57 @@
 		     ws = null;
 		}
 	    }
+            function keepalive() {
+		if (ws) {
+		    try {
+		        ws.send('hello');
+	            } catch(err) {
+                        ws = new WebSocket("ws://192.168.1.11:5678/");
+		    }
+		}
+		//window.setTimeout(keepalive, 1000);
+	    }
             ws.onmessage = function (event) {
-		if (event.data.indexOf("lap-length=")>=0) {
-                    var lap_len_box = document.getElementById('Lap-Length');
-		    l = parseInt(event.data.substring(11));
-		    f = l*3.28; 
-		    lap_len_box.innerHTML = f.toFixed(2);
-                    var lap_len_unit = document.getElementById('Length-Unit');
-		    lap_len_unit.innerHTML = " feet ("+l+" meters)";
+                data = JSON.parse(event.data);
+		laps = data.lap.number;
+		lap_len = data.lap.length;
+		T = data.lap.time;
+                var lap_len_box = document.getElementById('Lap-Length');
+                var lap_len_unit = document.getElementById('Length-Unit');
+		feet = lap_len*3.28; 
+		lap_len_box.innerHTML = feet.toFixed(2);
+		lap_len_unit.innerHTML = " feet ("+lap_len+" meters)";
+		if (!T) {
 		    return;
 		}
-		var laps = parseInt(event.data);
-		Laps.value = laps;
 		if (laps < 10) {
-		      txt = "000"+event.data;
+		      txt = "000"+laps;
 		} else if(laps < 100) {
-		      txt = "00"+event.data;
+		      txt = "00"+laps;
 		} else if(laps < 1000) {
-		      txt = "0"+event.data;
+		      txt = "0"+laps;
 		} else {
-		      txt = event.data;
+		      txt = laps;
 		}
 		if (laps>0) {
-			compute_pace();
-		        if (laps % 10 == 0) {
-			    if (!played) {
+		   compute_pace(laps, feet, T);
+		   if (laps % 10 == 0) {
+			if (!played) {
 			    //var sound = document.getElementById("every10laps");
 			    //sound.play();
-			        counterText.style.color = "red";
-			        played = true;
-			    }
+			    counterText.style.color = "red";
+			    played = true;
 			}
-		} else {
-                        var T0 = document.getElementById('T0');
-		        now = new Date();
-		        T = now.getTime()/1000;
-			T0.value = T.toString();
-			played = false;
+		   } else {
 			counterText.style.color = "black";
+		   }
+		} else {
+                   var T0 = document.getElementById('T0');
+		   now = new Date();
+		   T = now.getTime()/1000;
+		   T0.value = T.toString();
+		   played = false;
+		   counterText.style.color = "black";
 		}
                 counterText.innerText = txt;
 

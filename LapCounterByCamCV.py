@@ -1,19 +1,14 @@
 #!/usr/bin/env python3
-import sys
+import sys, time, signal, datetime, random, ctypes, pygame, asyncio, argparse
+import websockets, json
 from threading import Thread
 from threading import _active as active_threads
-import pygame, time, ctypes
-import time, signal
-import asyncio
-import datetime
-import random
-import websockets
 from websockets import WebSocketServerProtocol
 import CamMotionCV
-import argparse
  
 Start = False 
 LapUpdate = False 
+Elapsed = 0
 KeepRunning = True
 clients = set()
 Laps = -1
@@ -49,21 +44,24 @@ class LapCounter(Thread):
         self.camera = CamMotionCV.MotionDetector(src="picam",show=self.show, capture=self.capture, min_area=self.sensitivity)
         self.camera.detect_motion(self)
     def handle_motion(self,motion):
-        global Start, Laps, LapUpdate
+        global Start, Laps, LapUpdate, Elapsed
         #print("Motion detected")
         if not Start:
             return None
-        #print("Counting started")
         if motion:
            now = time.time()
            if not self.then:
-               elapsed = 0
+               Laps = 0
+               delta = 0
+               self.T0 = now
                self.then = now
                # First motion detected
                LapUpdate = True
+               print("Lap #{}".format(Laps))
            else:
-               elapsed = now - self.then
-           if elapsed >= 5:
+               delta = now - self.then
+           if delta >= 5:
+               Elapsed = now - self.T0
                self.then = now
                #self.laps += 1
                Laps += 1
@@ -90,37 +88,51 @@ class LapCounter(Thread):
  
 
 async def register(wsock):
-    global clients, Laps, LapLength
-    laps = Laps
-    clients.add((wsock,laps))
+    print("Register: new client {}".format(wsock))
+    global clients, LapLength, Elapsed
+    clients.add(wsock)
     try:
-        await wsock.send("lap-length={}".format(LapLength))
+        msg = {
+            "lap": {
+                "length":LapLength,
+                "number":Laps,
+                "time": Elapsed
+            }
+        }
+        await wsock.send(json.dumps(msg))
     except Exception as e:
         #print(str(e))
-        print("Register: Client {} seems gone".format(client))
-        await unregister((wsock,laps))
+        await unregister(wsock)
 
 async def unregister(client):
     global clients
+    print("Unregister: client {}".format(client))
     clients.remove(client)
+    print(clients)
 
-async def update_client(client, laps):
+async def update_client(client, lap_len, laps, elapsed):
       try:
-          wsock, L = client
-          if L:
-              L = laps - L
-              await wsock.send(str(L))
+          msg = {
+            "lap": {
+                "length":lap_len,
+                "number":laps,
+                "time": elapsed
+            }
+          }
+          #print("Updating client:{}".format(msg))
+          await client.send(json.dumps(msg))
+          #print("Updated client:{}".format(msg))
       except Exception as e:
-          #print(str(e))
+          print(str(e))
           print("Client {} seems gone".format(client))
           await unregister(client)
 
 async def producer_handler(wsock, path):
-    global KeepRunning, LapUpdate
+    global KeepRunning, LapUpdate, Laps, LapLength, Elapsed
     while KeepRunning:
         if LapUpdate:
             LapUpdate = False
-            await asyncio.wait([update_client(client, Laps) for client in clients])
+            await asyncio.wait([update_client(client, LapLength, Laps, Elapsed) for client in clients])
         else:
             await asyncio.sleep(0.5)
 
@@ -216,7 +228,7 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, exit_cleanup)
 
     start_server = websockets.serve(handler, "0.0.0.0", 5678)
-
+    print("Server {}:".format(start_server))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(start_server)
     loop.run_forever()
