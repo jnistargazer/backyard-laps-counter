@@ -10,7 +10,6 @@ Start = False
 LapUpdate = False 
 Elapsed = 0
 KeepRunning = True
-clients = set()
 Laps = -1
 class CheerLeader(Thread):
     def __init__(self):
@@ -84,13 +83,17 @@ class LapCounter(Thread):
         pass
     def reset_counter(self):
         #self.laps = 0
+        global Laps
         Laps = 0
  
 
+clients = {}
 async def register(wsock):
-    print("Register: new client {}".format(wsock))
     global clients, LapLength, Elapsed
-    clients.add(wsock)
+    client_ip = wsock.remote_address[0]
+    print("Register: new client {}".format(client_ip))
+    client = clients.get(client_ip, None)
+    clients[client_ip] = wsock
     try:
         msg = {
             "lap": {
@@ -104,13 +107,15 @@ async def register(wsock):
         #print(str(e))
         await unregister(wsock)
 
-async def unregister(client):
+async def unregister(wsock):
     global clients
-    print("Unregister: client {}".format(client))
-    clients.remove(client)
+    client_ip = wsock.remote_address[0]
+    print("Unregister: client {}".format(client_ip))
+    if client_ip in clients:
+        del clients[client_ip]
     print(clients)
 
-async def update_client(client, lap_len, laps, elapsed):
+async def update_client(wsock, lap_len, laps, elapsed):
       try:
           msg = {
             "lap": {
@@ -120,19 +125,22 @@ async def update_client(client, lap_len, laps, elapsed):
             }
           }
           #print("Updating client:{}".format(msg))
-          await client.send(json.dumps(msg))
+          await wsock.send(json.dumps(msg))
           #print("Updated client:{}".format(msg))
       except Exception as e:
           print(str(e))
-          print("Client {} seems gone".format(client))
-          await unregister(client)
+          print("Client {} seems gone".format(wsock))
+          await unregister(wsock)
 
 async def producer_handler(wsock, path):
     global KeepRunning, LapUpdate, Laps, LapLength, Elapsed
     while KeepRunning:
         if LapUpdate:
             LapUpdate = False
-            await asyncio.wait([update_client(client, LapLength, Laps, Elapsed) for client in clients])
+            try:
+                await asyncio.wait([update_client(clients[client_ip], LapLength, Laps, Elapsed) for client_ip in clients])
+            except:
+                pass
         else:
             await asyncio.sleep(0.5)
 
