@@ -1,0 +1,4 @@
+#!/bin/bash
+
+docker-compose -f /usr/local/bin/backyard/lap-counter/docker-compose.yml build
+systemctl enable lap-counter

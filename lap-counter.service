@@ -1,0 +1,14 @@
+[Unit]
+Description=Backyard Runner Laps Counter
+[Service]
+User=pi
+Type=simple
+TimeoutSec=0
+ExecStart=/usr/local/bin/backyard/lap-counter.sh start
+ExecStop=/usr/local/bin/backyard/lap-counter.sh stop
+Restart=on-failure
+RestartSec=5s
+StandardOutput=syslog
+StandardError=syslog
+[Install]
+WantedBy=default.target

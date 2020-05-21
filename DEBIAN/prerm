@@ -1,0 +1,8 @@
+#!/bin/bash
+systemctl stop lap-counter
+systemctl disable lap-counter
+if [[ -f $COMPOSER ]]; then
+        docker-compose -f /usr/local/bin/backyard/lap-counter/docker-compose.yml down
+fi
+rm -rf /usr/local/bin/backyard/lap-counter 
+exit 0

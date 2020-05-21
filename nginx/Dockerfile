@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y procps curl python3 python3-pip python3
 RUN pip3 install imutils 
 ADD laps-counter.conf /etc/nginx/conf.d/defaul.conf
 #USER webmaster
-ADD cv-motion-detect.py /root/motion-detection/
+#ADD cv-motion-detect.py /root/motion-detection/
 WORKDIR /var/www
 ADD index.html .
 ADD Cheer.wav media/

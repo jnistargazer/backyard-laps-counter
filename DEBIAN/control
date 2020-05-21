@@ -1,0 +1,4 @@
+Package: Lap-Counter
+Section: x11
+Priority: optional
+Essential:
