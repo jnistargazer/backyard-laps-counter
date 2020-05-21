@@ -169,6 +169,7 @@
 		      txt = laps;
 		}
 		if (laps>0) {
+		   start_txt.innerHTML = "Stop";
 		   compute_pace(laps, feet, T);
 		   if (laps % 10 == 0) {
 			if (!played) {
