@@ -31,17 +31,19 @@ class CheerLeader(Thread):
                 time.sleep(1.0)
 
 class LapCounter(Thread):
-    def __init__(self, show=False, capture=False, sensitivity=250):
+    def __init__(self, show=False, sensitivity=250):
         super().__init__()
-        self.camera = None
+        self.motion_sensor = None
         self.show = show
-        self.capture = capture
         self.sensitivity = sensitivity
         self.then = None
         #self.laps = -1
+    def capture(self, flag):
+        if self.motion_sensor:
+           self.motion_sensor.set_capture(flag);
     def run(self):
-        self.camera = CamMotionCV.MotionDetector(src="picam",show=self.show, capture=self.capture, min_area=self.sensitivity)
-        self.camera.detect_motion(self)
+        self.motion_sensor = CamMotionCV.MotionDetector(src="picam",show=self.show, min_area=self.sensitivity)
+        self.motion_sensor.detect_motion(self)
     def handle_motion(self,motion):
         global Start, Laps, LapUpdate, Elapsed
         #print("Motion detected")
@@ -156,6 +158,10 @@ async def commander(cmd):
        counter.finish()
     elif cmd == "reset":
        counter.reset_counter()
+    elif cmd == "capture":
+       counter.capture(True)
+    elif cmd == "no-capture":
+       counter.capture(False)
     elif cmd == "exit":
        KeepRunning = False
     
@@ -203,20 +209,16 @@ def exit_cleanup(sig, tmp):
 
 if __name__ == "__main__":
     show = False
-    capture = False
     # My backyard!! In meters
     LapLength = 33
     aparser = argparse.ArgumentParser()
     aparser.add_argument("-v", "--view", nargs="?", const="yes", default="no", help="Show video")
     aparser.add_argument("-s", "--sensitivity", type=int, default=200, help="Motion detection sensitity (smaller number means more sensitive)")
-    aparser.add_argument("-c", "--capture", nargs="?", const="yes", default="no", help="capture photos for each lap")
     aparser.add_argument("-l", "--lap-length", type=int, default=33, help="Length of a lap")
     args = vars(aparser.parse_args())
     print(args)
     if args.get("view", None) == "yes":
         show = True
-    if args.get("capture", None) == "yes":
-        capture = True
     if args.get("lap-length", None):
         LapLength = args.get("lap-length")
     if args.get("sensitivity", None):
@@ -224,7 +226,7 @@ if __name__ == "__main__":
 
 
     my_threads = []
-    counter = LapCounter(show=show, capture=capture, sensitivity=sensitivity)
+    counter = LapCounter(show=show, sensitivity=sensitivity)
     counter.start()
     my_threads.append(counter)
     #cheer = CheerLeader()

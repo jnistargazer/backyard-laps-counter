@@ -5,10 +5,10 @@ import time
 import cv2
 
 class MotionDetector:
-    def __init__(self, src="picam", show=False, capture=False, min_area=250):
+    def __init__(self, src="picam", show=False, min_area=250):
         self.src = src
         self.show = show
-        self.capture = capture
+        self.capture = False
         self.min_area = min_area
         if self.src == "picam":
             self.vs = VideoStream(src=0).start()
@@ -16,12 +16,17 @@ class MotionDetector:
         # otherwise, we are reading from a video file
         else:
             self.vs = cv2.VideoCapture(src)
+    def set_capture(self, flag):
+        self.capture = flag
     def detect_motion(self, motion_handler):
         # loop over the frames of the video
         motion_start = False
         motions = 0
         # initialize the first frame in the video stream
         motionStartFrame = None
+        lap=0
+        cap=0
+        is_a_lap = False
         while True:
             # grab the current frame and initialize the occupied/unoccupied
             # text
@@ -62,12 +67,17 @@ class MotionDetector:
                 if not motion_start:
                     #print("Motion started")
                     motion_start = True
-                    ret = motion_handler.handle_motion(True)
-                    if ret is not None and self.capture:
-                        cv2.imwrite("./capture/cv-cap{}.jpg".format(ret),frame)
-                        cv2.imwrite("./capture/cv-cap-delta{}.jpg".format(ret),gray)
+                    cap=0
+                    is_a_lap = motion_handler.handle_motion(True)
+                    lap += 1
                     motions += 1
+                else:
+                    cap += 1
+                if self.capture and is_a_lap:
+                    cv2.imwrite("./capture/cap{}-{}.jpg".format(lap, cap),frame)
+                    #cv2.imwrite("./capture/cv-cap-delta{}.jpg".format(ret),gray)
             else:
+                is_a_lap = False
                 if motion_start:
                     #print("Motion stopeed")
                     motion_start = False

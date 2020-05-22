@@ -39,7 +39,7 @@
 <div hidden=true><input id="Lap-Length" value=33></div>
 -->
 <div class='relative'>
-	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="gone();"><B>Exit</B></button></td></tr>
+	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="capture();"><B id="capture">Capture</B></button></td></tr>
 <tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
 <tr><td><D>Lap Length:</D></td><td><D id="Lap-Length">?</D><D id="Length-Unit">...</D></td></tr>
 <tr><td><D>Distance:</D></td><td><D id="Distance">0</D></td></tr>
@@ -129,6 +129,18 @@
             function reset() {
 		if(ws)ws.send('reset');
 	    }
+            function capture() {
+		    if(ws) {
+		        e = document.getElementById('capture');
+			if (e.innerHTML == "Capture") {
+			    ws.send("capture");
+		            e.innerHTML = "Stop Capture";
+			} else {
+			    ws.send("no-capture");
+		            e.innerHTML = "Capture";
+			}
+		    }
+	    }
             function gone() {
 		if(ws) {
 		     ws.send('exit');
@@ -175,9 +187,9 @@
 			if (!played) {
 			    //var sound = document.getElementById("every10laps");
 			    //sound.play();
-			    counterText.style.color = "red";
 			    played = true;
 			}
+			counterText.style.color = "red";
 		   } else {
 			counterText.style.color = "black";
 		   }
