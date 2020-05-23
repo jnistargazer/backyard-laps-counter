@@ -11,11 +11,16 @@ class MotionDetector:
         self.capture = False
         self.min_area = min_area
         if self.src == "picam":
-            self.vs = VideoStream(src=0).start()
+            #self.vs = VideoStream(src=0).start()
+            self.vs = cv2.VideoCapture(0)
             time.sleep(2.0)
-        # otherwise, we are reading from a video file
         else:
-            self.vs = cv2.VideoCapture(src)
+            # otherwise, we are reading from a video file
+            self.vs = cv2.VideoCapture(self.src)
+
+        if not self.vs.isOpened():
+            print("Camera is not opened")
+            sys.exit(1)
     def set_capture(self, flag):
         self.capture = flag
     def detect_motion(self, motion_handler):
@@ -27,19 +32,23 @@ class MotionDetector:
         lap=0
         cap=0
         is_a_lap = False
+        (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_cap = None
+        fps = 10
         while True:
             # grab the current frame and initialize the occupied/unoccupied
             # text
-            frame = self.vs.read()
-            frame = frame if self.src == "picam" else frame[1]
+            ret,frame = self.vs.read()
+            #frame = frame if self.src == "picam" else frame[1]
             # if the frame could not be grabbed, then we have reached the end
             # of the video
             if frame is None:
                 print("No frame available")
                 break
             # resize the frame, convert it to grayscale, and blur it
-            frame = imutils.resize(frame, width=500)
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            frame1 = imutils.resize(frame, width=500)
+            gray = cv2.cvtColor(frame1, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
             # if the first frame is None, initialize it
             if motionStartFrame is None:
@@ -71,17 +80,25 @@ class MotionDetector:
                     is_a_lap = motion_handler.handle_motion(True)
                     lap += 1
                     motions += 1
+                    if self.capture and is_a_lap and video_cap is None:
+                        video_cap = cv2.VideoWriter(
+                                "capture/lap{}.avi".format(lap),
+                                fourcc, fps, (w,h))
                 else:
                     cap += 1
-                if self.capture and is_a_lap:
-                    cv2.imwrite("./capture/cap{}-{}.jpg".format(lap, cap),frame)
-                    #cv2.imwrite("./capture/cv-cap-delta{}.jpg".format(ret),gray)
+
+                if video_cap is not None:
+                    video_cap.write(frame)
             else:
                 is_a_lap = False
                 if motion_start:
                     #print("Motion stopeed")
                     motion_start = False
                     motion_handler.handle_motion(False)
+                if video_cap:
+                    video_cap.write(frame)
+                    video_cap.release()
+                    video_cap = None
             motionStartFrame = gray
             if self.show:
                 text = "LAP {}".format(motions)
@@ -99,5 +116,8 @@ class MotionDetector:
                 if key == ord("q"):
                     break
         # cleanup the camera and close any open windows
-        self.vs.stop() if self.src == "picam" else self.vs.release()
+        if video_cap is not None:
+            video_cap.release()
+        #self.vs.stop() if self.src == "picam" else self.vs.release()
+        self.vs.release()
         cv2.destroyAllWindows()
