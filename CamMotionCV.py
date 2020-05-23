@@ -1,7 +1,7 @@
 from imutils.video import VideoStream
 import datetime
 import imutils
-import time
+import time, os, sys
 import cv2
 
 class MotionDetector:
@@ -26,16 +26,17 @@ class MotionDetector:
     def detect_motion(self, motion_handler):
         # loop over the frames of the video
         motion_start = False
-        motions = 0
         # initialize the first frame in the video stream
         motionStartFrame = None
         lap=0
-        cap=0
         is_a_lap = False
         (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         video_cap = None
         fps = 10
+        cap_path = os.environ.get('CAPTURE_DIR', None)
+        cap_path = cap_path if cap_path else "./capture" 
+        os.makedirs(cap_path, exist_ok = True)
         while True:
             # grab the current frame and initialize the occupied/unoccupied
             # text
@@ -76,16 +77,12 @@ class MotionDetector:
                 if not motion_start:
                     #print("Motion started")
                     motion_start = True
-                    cap=0
                     is_a_lap = motion_handler.handle_motion(True)
-                    lap += 1
-                    motions += 1
                     if self.capture and is_a_lap and video_cap is None:
                         video_cap = cv2.VideoWriter(
-                                "capture/lap{}.avi".format(lap),
+                                "{}/lap{}.avi".format(cap_path,lap),
                                 fourcc, fps, (w,h))
-                else:
-                    cap += 1
+                        lap += 1
 
                 if video_cap is not None:
                     video_cap.write(frame)
@@ -101,7 +98,7 @@ class MotionDetector:
                     video_cap = None
             motionStartFrame = gray
             if self.show:
-                text = "LAP {}".format(motions)
+                text = "LAP {}".format(lap)
                 # draw the text and timestamp on the frame
                 cv2.putText(frame, text, (10, 20),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)

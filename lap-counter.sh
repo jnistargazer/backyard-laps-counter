@@ -12,4 +12,5 @@ if [[ -f $CONF ]]; then
 		CAPTURE="--capture"
 	fi
 fi
-python3 $BACKYARD_PATH/lap-counter/LapCounterByCamCV.py $VIEW $CAPTURE --sensitivity ${SENSITIVITY:-"200"} --lap-length ${LAP_LENGTH:-"33"} > /tmp/laps-counter.log 2>&1
+#python3 $BACKYARD_PATH/lap-counter/LapCounterByCamCV.py $VIEW $CAPTURE --sensitivity ${SENSITIVITY:-"200"} --lap-length ${LAP_LENGTH:-"33"} > /tmp/laps-counter.log 2>&1
+python3 $BACKYARD_PATH/lap-counter/LapCounterByCamCV.py $VIEW $CAPTURE --sensitivity ${SENSITIVITY:-"200"} --lap-length ${LAP_LENGTH:-"33"}
