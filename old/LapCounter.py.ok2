@@ -1,0 +1,198 @@
+#!/usr/bin/env python
+import sys
+from gpiozero import LED
+from gpiozero import MotionSensor
+from threading import Thread
+from threading import _active as active_threads
+import pygame, time, ctypes
+import time
+import asyncio
+import datetime
+import random
+import websockets
+from websockets import WebSocketServerProtocol
+ 
+MOTION_SENSOR_PIN = 4
+LED_PIN = 17
+theColor = "black"
+Cheer = False
+Start = False 
+MotionSensed = False
+Laps = 0
+class CheerLeader(Thread):
+    def __init__(self):
+        super().__init__()
+        pygame.init()
+        self.sound = pygame.mixer.Sound("/home/pi/laps-counter/Cheer.wav")
+        self.sound.set_volume(100)
+    def run(self):
+        global Cheer
+        if Cheer:
+            self.sound.play()
+            Cheer = False
+
+class MotionDetector(Thread):
+    def __init__(self):
+        super().__init__()
+        self.led = LED(LED_PIN)
+        self.sensor = MotionSensor(MOTION_SENSOR_PIN)
+        self.led.off()
+    def run(self):
+        self.start_counting()
+
+    def start_counting(self):
+        global theColor, Cheer, Start, Laps, MotionSensed
+        while True: 
+            if not Start:
+                continue
+            self.sensor.wait_for_motion()
+            if Laps > 0:
+                if Laps % 10 == 0:
+                    theColor="red"
+                    Cheer = True
+                else:
+                    theColor="black"
+                self.led.on()
+            Laps += 1
+            MotionSensed = True
+            self.sensor.wait_for_no_motion() 
+            self.led.off()
+    def stop_counting(self):
+         Start = False
+ 
+class LapCounter_Websocket_server():
+    def __init__(self):
+        pass
+
+    def start_sensor(self):
+        global Start
+        Start = True
+        if self.sensor:
+            return
+        self.sensor = MotionDetector(self)
+        self.sensor.start()
+    def stop_sensor(self):
+        if self.sensor:
+            self.sensor.stop_counting()
+        
+    def reset_btn_clicked(self):
+        global Laps
+        print("Counter reset to 0")
+        Laps = 0
+        self.updateUI()
+    def start_btn_clicked(self):
+        global Start
+        Start = not Start
+        if Start:
+            bg_clr = '#00FF00'
+            txt = 'Stop'
+            print("Starting sensor")
+            self.start_sensor()
+            print("Sensor started")
+        else:
+            bg_clr = '#FF0000'
+            txt = 'Start'
+            print("Stopping sensor")
+            self.stop_sensor()
+            print("Sensor stopped")
+
+class WS_Server:
+    clients = set()
+    async def register(self, ws: WebSocketServerProtocol) -> None:
+        self.cliens.add(ws)
+    async def unregister(self, ws: WebSocketServerProtocol) -> None:
+        self.cliens.remove(ws)
+    async def send_to_clients(self, msg: str) -> None:
+        if self.clients:
+            await asyncio.wait([client.send(msg) for client in self.clients])
+    async def ws_handler(self, ws: WebSocketServerProtocol, uri: str) -> None:
+        await self.register(ws)
+        try:
+            await self.distribute(ws)
+        finally:
+            await self.unregister(ws)
+
+    async def distrubute(self, ws: WebSocketServerProtocol) -> None:
+        async for message in ws:
+            await self.send_to_clients(message)
+
+sensor = None
+
+async def updater():
+    global MotionSensed, sensor, Laps
+    if not sensor:
+        print("Creating motion sensor ...")
+        sensor = MotionSensor(MOTION_SENSOR_PIN)
+    if Start:
+        print("Waiting for motion ...")
+        await sensor.wait_for_motion()
+        print("Motion sensed.")
+        Laps += 1
+        if Laps < 10:
+                displayText = "000{}".format(Laps)
+        elif Laps < 100:
+                displayText = "00{}".format(Laps)
+        elif Laps < 1000:
+                displayText = "0{}".format(Laps)
+        elif Laps < 10000:
+                displayText = "{}".format(Laps)
+        await sensor.wait_for_no_motion()
+        return displayText
+    else:
+        await asyncio.sleep(1)
+        return ""
+
+async def producer_handler(wsock, path):
+    while True:
+        msg = await updater()
+        if msg:
+            await wsock.send(msg)
+            print("Counter sent to browser")
+
+async def commander(msg):
+    global Laps, Start
+    print("Command received: "+msg)
+    data = json.loads(msg)
+    cmd = data['action']
+    if cmd == "start":
+       Start = True
+    elif cmd == "stop":
+       Start = False
+    elif cmd == "reset":
+       Laps = 0
+    
+async def consumer_handler(wsock, path):
+    while True:
+        async for msg in wsock:
+            await commander(msg)
+
+async def handler(wsock, path):
+    global Laps, theColor, Cheer, MotionSensed
+    consumer = asyncio.ensure_future(
+        consumer_handler(wsock, path)
+    ) 
+    producer = asyncio.ensure_future(
+        producer_handler(wsock, path)
+    ) 
+
+    done, pending = await asyncio.wait(
+        [consumer, producer],
+        return_when=asyncio.ALL_COMPLETED,
+    )
+    for task in pending:
+        task.cancel()
+
+#counter = MotionDetector()
+#counter.start()
+
+cheer = CheerLeader()
+cheer.start()
+
+start_server = websockets.serve(handler, "0.0.0.0", 5678)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(start_server)
+loop.run_forever()
+
+#counter.join()
+cheer.join()
