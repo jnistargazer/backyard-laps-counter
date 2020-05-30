@@ -1,4 +1,4 @@
-all: build run
+all: build
 
 build:
 	docker-compose build

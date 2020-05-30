@@ -1,5 +1,6 @@
 VERSION := "0.1"
-run:
+test:
+	docker-compose -f nginx/docker-compose.yml up -d
 	python3 LapCounterByCamCV.py
 ui: nginx/index.html
 	cd nginx && make

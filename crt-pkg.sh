@@ -12,10 +12,8 @@ cp lap-counter.sh $DEB_PKG_BUILD_DIR/$PKG_ROOT
 cp lap-counter.conf $DEB_PKG_BUILD_DIR/$PKG_ROOT
 cp lap-counter.service $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
 cp nginx/index.html $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp nginx/Dockerfile $DEB_PKG_BUILD_DIR/$PKG_ROOT
+sed -E -e "/(build|context|dockerfile):/d" nginx/docker-compose.yml > $DEB_PKG_BUILD_DIR/$PKG_ROOT/docker-compose.yml
 cp nginx/Cheer.wav $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp nginx/laps-counter.conf $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp nginx/docker-compose.yml $DEB_PKG_BUILD_DIR/$PKG_ROOT
 cp -r DEBIAN $DEB_PKG_BUILD_DIR
 
 echo "Version: ${VERSION}" >> ${DEB_PKG_BUILD_DIR}/DEBIAN/control
