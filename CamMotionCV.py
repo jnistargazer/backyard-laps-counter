@@ -52,6 +52,7 @@ class MotionDetector:
         video_cap = cv2.VideoWriter(
                   "{}/bird-{}.avi".format(cap_path,timestamp),
                   fourcc, fps, (w,h))
+        T0 = 0
         while True:
             # grab the current frame
             T = time.time()
@@ -63,7 +64,11 @@ class MotionDetector:
             if self.prevGrayedFrame is None:
                 self.prevGrayedFrame = gray
                 continue
-            motion,thresh,delta = self.motion_detected(frame, gray)
+            if T0 == 0:
+                motion,thresh,delta = self.motion_detected(frame, gray)
+            else:
+                pass
+                # We do not do motion detection when recording is going on
             self.prevGrayedFrame = gray
             cv2.putText(frame,
                       datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
@@ -82,6 +87,7 @@ class MotionDetector:
             if T0 > 0 and T - T0 <= 10:  
                 # Keep recording 10s
                 video_cap.write(frame)
+                time.sleep(0.0417)
             elif T0 > 0:
                 # If we come here, we know we have finished a 10s recording
                 # Turn off the timer
