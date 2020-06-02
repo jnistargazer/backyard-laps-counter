@@ -45,7 +45,7 @@ class MotionDetector:
         is_a_lap = False
         (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        fps = 10
+        fps = 28
         cap_path = "./capture" 
         os.makedirs(cap_path, exist_ok = True)
         timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
@@ -54,11 +54,15 @@ class MotionDetector:
                   fourcc, fps, (w,h))
         T0 = 0
         event = 0
+        num_frames = 0
         while True:
             # grab the current frame
             T = time.time()
             DT = datetime.datetime.fromtimestamp(T).strftime("%A %d %B %Y %I:%M:%S%p")
             ret,frame = self.vs.read()
+            cv2.putText(frame,"{}".format(DT),
+                (10, frame.shape[0] - 10),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
             # resize the frame, convert it to grayscale, and blur it
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             gray = cv2.GaussianBlur(gray, (21, 21), 0)
@@ -77,28 +81,29 @@ class MotionDetector:
                 # Start recording timer if it isn't running
                 if T0 == 0:
                     T0 = T
+                    DT0 = datetime.datetime.fromtimestamp(T).strftime("%m/%d/%Y %I:%M:%S%p")
                     event += 1
+                    num_frames = 0
 
             if T0 > 0 and T - T0 <= 10:  
                 # Keep recording 10s
-                cv2.putText(frame,"Event {} ({})".format(event, DT),
-                      (10, frame.shape[0] - 30),
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+                cv2.putText(frame,"Event #{} @ {}".format(event, DT0),
+                      (10, frame.shape[0] - 25),
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
                 video_cap.write(frame)
-                time.sleep(0.0417)
+                num_frames += 1
             elif T0 > 0:
                 # If we come here, we know we have finished a 10s recording
                 # Turn off the timer
                 T0 = 0
+                print("Event #{}: {} frames recorded".format(event,num_frames))
+                num_frames = 0
             else:
                 # No motion detected as the timer is not started
                 pass
 
             # show the frame and record if the user presses a key
             if self.show:
-                cv2.putText(frame,
-                      DT, (10, frame.shape[0] - 10),
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
                 cv2.imshow("Scene", frame)
                 #cv2.imshow("Thresh", thresh)
                 #cv2.imshow("Diff", delta)
