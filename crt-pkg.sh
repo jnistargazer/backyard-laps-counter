@@ -1,19 +1,19 @@
 #!/bin/bash
 eval $1
-PKG_NAME=lap-counter-${VERSION}-armhf.deb
+PKG_NAME=backyard-surv-${VERSION}-armhf.deb
 DEB_PKG_BUILD_DIR=./pkg-build-dir
-PKG_ROOT=/usr/local/bin/backyard/lap-counter
+PKG_ROOT=/usr/local/bin/backyard/surv
 SYSTEMD_DIR=/etc/systemd/system
 
 mkdir -p $DEB_PKG_BUILD_DIR/$PKG_ROOT $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
 cp CamMotionCV.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
 cp LapCounterByCamCV.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp lap-counter.sh $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp lap-counter.conf $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp lap-counter.service $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
+cp backyard-surv.sh $DEB_PKG_BUILD_DIR/$PKG_ROOT
+cp backyard-surv.conf $DEB_PKG_BUILD_DIR/$PKG_ROOT
+cp backyard-surv.service $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
 cp nginx/index.html $DEB_PKG_BUILD_DIR/$PKG_ROOT
-sed -E -e "/(build|context|dockerfile):/d" nginx/docker-compose.yml > $DEB_PKG_BUILD_DIR/$PKG_ROOT/docker-compose.yml
-cp nginx/Cheer.wav $DEB_PKG_BUILD_DIR/$PKG_ROOT
+#sed -E -e "/(build|context|dockerfile):/d" nginx/docker-compose.yml > $DEB_PKG_BUILD_DIR/$PKG_ROOT/docker-compose.yml
+#cp nginx/Cheer.wav $DEB_PKG_BUILD_DIR/$PKG_ROOT
 cp -r DEBIAN $DEB_PKG_BUILD_DIR
 
 echo "Version: ${VERSION}" >> ${DEB_PKG_BUILD_DIR}/DEBIAN/control

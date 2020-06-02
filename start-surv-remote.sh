@@ -12,4 +12,4 @@
 
 # Must ssh -x pi@<my-ip-addr> if intending to run me from the remote host
 export DISPLAY=localhost:10.0
-python3 ./LapCounterByCamCV.py --view --capture
+python3 ./backyard-surv.py

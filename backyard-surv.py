@@ -1,12 +1,12 @@
 from imutils.video import VideoStream
 import datetime
 import imutils
-import time, os, sys
+import time, os, sys, argparse
 import cv2
 
 class MotionDetector:
-    def __init__(self, min_area=20):
-        self.capture = False
+    def __init__(self, min_area=20, show=False):
+        self.show = show
         self.min_area = min_area
         self.prevGrayedFrame = None
         self.vs = cv2.VideoCapture(0)
@@ -16,26 +16,26 @@ class MotionDetector:
             sys.exit(1)
 
     def motion_detected(self, frame, gray):
-            frame = imutils.resize(frame, width=500)
-            # compute the absolute difference between the current frame and
-            # first frame
-            delta = cv2.absdiff(self.prevGrayedFrame, gray)
-            thresh = cv2.threshold(delta, 20, 255, cv2.THRESH_BINARY)[1]
-            # dilate the thresholded image to fill in holes, then find contours
-            # on thresholded image
-            thresh = cv2.dilate(thresh, None, iterations=2)
-            cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
+        frame = imutils.resize(frame, width=500)
+        # compute the absolute difference between the current frame and
+        # first frame
+        delta = cv2.absdiff(self.prevGrayedFrame, gray)
+        thresh = cv2.threshold(delta, 20, 255, cv2.THRESH_BINARY)[1]
+        # dilate the thresholded image to fill in holes, then find contours
+        # on thresholded image
+        thresh = cv2.dilate(thresh, None, iterations=2)
+        cnts = cv2.findContours(thresh.copy(), cv2.RETR_EXTERNAL,
                 cv2.CHAIN_APPROX_SIMPLE)
-            cnts = imutils.grab_contours(cnts)
-            # loop over the contours
-            motion = False
-            for c in cnts:
-                # if the contour is too small, ignore it
-                if cv2.contourArea(c) < self.min_area:
-                    continue
-                motion = True
-                break
-            return (motion, thresh, delta)
+        cnts = imutils.grab_contours(cnts)
+        # loop over the contours
+        motion = False
+        for c in cnts:
+            # if the contour is too small, ignore it
+            if cv2.contourArea(c) < self.min_area:
+                continue
+            motion = True
+            break
+        return (motion, thresh, delta)
 
     def detect_motion(self):
         # loop over the frames of the video
@@ -53,9 +53,11 @@ class MotionDetector:
                   "{}/bird-{}.avi".format(cap_path,timestamp),
                   fourcc, fps, (w,h))
         T0 = 0
+        event = 0
         while True:
             # grab the current frame
             T = time.time()
+            DT = datetime.datetime.fromtimestamp(T).strftime("%A %d %B %Y %I:%M:%S%p")
             ret,frame = self.vs.read()
             # resize the frame, convert it to grayscale, and blur it
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
@@ -70,22 +72,18 @@ class MotionDetector:
                 pass
                 # We do not do motion detection when recording is going on
             self.prevGrayedFrame = gray
-            cv2.putText(frame,
-                      datetime.datetime.now().strftime("%A %d %B %Y %I:%M:%S%p"),
-                      (10, frame.shape[0] - 10),
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
-            # show the frame and record if the user presses a key
-            cv2.imshow("Scene", frame)
-            #cv2.imshow("Thresh", thresh)
-            #cv2.imshow("Diff", delta)
 
             if motion:
                 # Start recording timer if it isn't running
                 if T0 == 0:
                     T0 = T
+                    event += 1
 
             if T0 > 0 and T - T0 <= 10:  
                 # Keep recording 10s
+                cv2.putText(frame,"Event {} ({})".format(event, DT),
+                      (10, frame.shape[0] - 30),
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
                 video_cap.write(frame)
                 time.sleep(0.0417)
             elif T0 > 0:
@@ -95,6 +93,15 @@ class MotionDetector:
             else:
                 # No motion detected as the timer is not started
                 pass
+
+            # show the frame and record if the user presses a key
+            if self.show:
+                cv2.putText(frame,
+                      DT, (10, frame.shape[0] - 10),
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (0, 0, 255), 1)
+                cv2.imshow("Scene", frame)
+                #cv2.imshow("Thresh", thresh)
+                #cv2.imshow("Diff", delta)
             key = cv2.waitKey(1) & 0xFF
             # if the `q` key is pressed, break from the lop
             if key == ord("q"):
@@ -106,5 +113,18 @@ class MotionDetector:
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    motion_sensor = MotionDetector(min_area=20)
+    aparser = argparse.ArgumentParser()
+    aparser.add_argument("-v", "--show", nargs="?", const="yes", default="no", help="Show video")
+    aparser.add_argument("-o", "--output", default="./", help="video output dir")
+    aparser.add_argument("-s", "--sensitivity", type=int, default=200, help="Motion detection sensitity (smaller number means more sensitive)")
+    args = vars(aparser.parse_args())
+    print(args)
+    show = False
+    sensitivity = 50
+    if args.get("show", "false") in ["true", "yes", "True", "Yes"]:
+        show = True
+    if args.get("sensitivity", None):
+        sensitivity = args.get("sensitivity")
+
+    motion_sensor = MotionDetector(min_area=sensitivity, show=show)
     motion_sensor.detect_motion()
