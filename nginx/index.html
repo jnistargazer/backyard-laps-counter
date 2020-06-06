@@ -39,7 +39,7 @@
 	  top: 100px;
 	  left: 140px;
 	  width: 820px;
-	  height: 840px;
+	  height: 980px;
 	  border: 2px solid #0000FF;
   }
 </style>
@@ -56,8 +56,8 @@
 <div class='relative'>
 	<table border=0>
 	<tr>
-		<td><button onclick="start_stop();" id="B1"><B id="start_stop_action"><b>Start</b></B></button></td>
-		<td><button onclick="reset();"      id="B2"><B id="reset_action"><b>Reset</b></B></button></td>
+		<td><button onclick="start_stop();" id="B1"><B id="start_stop_action">Start</B></button></td>
+		<td><button onclick="reset();"      id="B2"><B id="reset_action">Reset</B></button></td>
 		<td><button onclick="capture();"    id="B3"><B id="capture">Capture</B></button></td>
 	</tr>
 	</table>
@@ -97,13 +97,6 @@
             var start_btn = document.getElementById('B1');
             var rest_btn = document.getElementById('B2');
             var played = false;
-            if (isMobile.any()) {
-		counterText.style.fontSize = "400px";
-		start_txt.style.fontSize = "20px";
-		rest_txt.style.fontSize = "20px"
-		//start_btn.style.height = "800px";
-		//reset_btn.style.height = "800px";
-            }
             console.log("Creating websocket ...");
             var ws = new WebSocket("ws://192.168.1.11:5678/");
 	    function compute_pace(laps, lap_len, elapsed) {
@@ -143,10 +136,11 @@
             }
             function start_stop() {
 		if (start_txt.innerHTML == "Start") {
-			start_txt.innerHTML = "Stop&nbsp;";
-			start_txt.color = "red";
+			start_txt.innerHTML = "Stop";
+			start_txt.style="color:red";
 			act = "start";
 		} else {
+			start_txt.style="color:black";
 			start_txt.innerHTML = "Start";
 			act = "stop";
 		}
@@ -161,7 +155,9 @@
 			if (e.innerHTML == "Capture") {
 			    ws.send("capture");
 		            e.innerHTML = "Stop Capture";
+		            e.style = "color:red";
 			} else {
+		            e.style = "color:black";
 			    ws.send("no-capture");
 		            e.innerHTML = "Capture";
 			}
