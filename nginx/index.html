@@ -2,27 +2,30 @@
 <body>
 <style>
   C {
-     font-size: 600px;
-  }
-
-  B {
-     font-size: 20px;
-     height:120px;
+     font-size: 400px;
   }
 
   D {
      font-size: 40px;
-     height:30px;
   }
+
   R {
      font-size: 40px;
      color: red;
      height:30px;
+     font-weight:bold;
   }
-  button {
-    height: 40px;
+
+  B  {
     font-size: 40px;
+    font-weight:bold;
   }
+
+  button {
+    font-size: 40px;
+    font-weight:bold;
+  }
+
   input.button {
     -webkit-appearance: button;
     -moz-appearance: button;
@@ -33,11 +36,11 @@
   }
   div.relative {
 	  position: relative;
-	  top: 100;
-	  left: 88px;
-	  width: 800px;
-	  height: 1000px;
-	  border: 3px solid #73AD21;
+	  top: 100px;
+	  left: 140px;
+	  width: 820px;
+	  height: 840px;
+	  border: 2px solid #0000FF;
   }
 </style>
 <audio id="every10laps">
@@ -51,19 +54,21 @@
 <div hidden=true><input id="Lap-Length" value=33></div>
 -->
 <div class='relative'>
-	<table style="height:1000px;border:0">
+	<table border=0>
 	<tr>
-		<td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td>
-		<td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td>
-		<td><button onclick="capture();"><B id="capture">Capture</B></button></td>
+		<td><button onclick="start_stop();" id="B1"><B id="start_stop_action"><b>Start</b></B></button></td>
+		<td><button onclick="reset();"      id="B2"><B id="reset_action"><b>Reset</b></B></button></td>
+		<td><button onclick="capture();"    id="B3"><B id="capture">Capture</B></button></td>
 	</tr>
-<tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
-<tr><td><D>Lap Length:</D></td><td><D id="Lap-Length">?</D><D id="Length-Unit">...</D></td></tr>
-<tr><td><D>Distance:</D></td><td><D id="Distance">0</D></td></tr>
-<tr><td><D>Time:</D></td><td><D id="Time">0</D></td></tr>
-<tr><td><R>Pace:</R></td><td><D id="Pace">0</D></td><td></tr>
-<tr><td></td><td></td><td><button onclick='shutdown();'><R>Shutdown</R></button></td></tr>
-</table>
+	</table>
+	<table>
+        <tr><td colspan=3><C id="_COUNTER_">0000</C></td></tr>
+        <tr><td><D>Lap:</D></td><td><D id="Lap-Length">?</D><D id="Length-Unit">...</D></td></tr>
+        <tr><td><D>Dist:</D></td><td><D id="Distance">0</D></td></tr>
+        <tr><td><D>Time:</D></td><td><D id="Time">0</D></td></tr>
+        <tr><td><R>Pace:</R></td><td><R style="font-weight:bold" id="Pace">0</R></td><td></tr>
+        <tr><td></td><td></td><td><button onclick='shutdown();'><R>Shutdown</R></button></td></tr>
+        </table>
 </div>
 <script>
             var isMobile = {
