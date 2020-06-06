@@ -5,6 +5,7 @@ from threading import Thread
 from threading import _active as active_threads
 from websockets import WebSocketServerProtocol
 import CamMotionCV
+import subprocess
  
 Start = False 
 LapUpdate = False 
@@ -162,8 +163,8 @@ async def commander(cmd):
        counter.capture(True)
     elif cmd == "no-capture":
        counter.capture(False)
-    elif cmd == "exit":
-       KeepRunning = False
+    elif cmd == "shutdown":
+       subprocess.call(['sudo', 'shutdown', 'now'])
     
 async def consumer_handler(wsock, path):
     global KeepRunning

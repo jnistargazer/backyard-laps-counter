@@ -2,17 +2,26 @@
 <body>
 <style>
   C {
-     font-size: 400px;
+     font-size: 600px;
   }
 
   B {
-     font-size: 20px
+     font-size: 20px;
+     height:120px;
   }
+
   D {
-     font-size: 40px
+     font-size: 40px;
+     height:30px;
+  }
+  R {
+     font-size: 40px;
+     color: red;
+     height:30px;
   }
   button {
-    height: 40px
+    height: 40px;
+    font-size: 40px;
   }
   input.button {
     -webkit-appearance: button;
@@ -20,11 +29,14 @@
     appearance: button;
     text-decoration: none;
     color: gray;
+    left: 50px;
   }
   div.relative {
 	  position: relative;
-	  left: 68px;
+	  top: 100;
+	  left: 88px;
 	  width: 800px;
+	  height: 1000px;
 	  border: 3px solid #73AD21;
   }
 </style>
@@ -39,12 +51,18 @@
 <div hidden=true><input id="Lap-Length" value=33></div>
 -->
 <div class='relative'>
-	<table border=0><tr><td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td><td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td><td><button onclick="capture();"><B id="capture">Capture</B></button></td></tr>
+	<table style="height:1000px;border:0">
+	<tr>
+		<td><button onclick='start_stop();';id="B1"><B id="start_stop_action">Start</B></button></td>
+		<td><button onclick='reset();';id="B2"><B id="reset_action">Reset</B></button></td>
+		<td><button onclick="capture();"><B id="capture">Capture</B></button></td>
+	</tr>
 <tr><td colspan=4><C id="_COUNTER_">0000</C></td></tr>
 <tr><td><D>Lap Length:</D></td><td><D id="Lap-Length">?</D><D id="Length-Unit">...</D></td></tr>
 <tr><td><D>Distance:</D></td><td><D id="Distance">0</D></td></tr>
 <tr><td><D>Time:</D></td><td><D id="Time">0</D></td></tr>
-<tr><td><D>Pace:</D></td><td><D id="Pace">0</D></td><td></tr>
+<tr><td><R>Pace:</R></td><td><D id="Pace">0</D></td><td></tr>
+<tr><td></td><td></td><td><button onclick='shutdown();'><R>Shutdown</R></button></td></tr>
 </table>
 </div>
 <script>
@@ -114,6 +132,9 @@
 		s = s.toFixed(1);
 		pace_str_metrics = m+":"+s;
 		pace_box.innerHTML = pace_str_royal + "/mile (" + pace_str_metrics + "/km)";
+            }
+            function shutdown() {
+                if(ws)ws.send('shutdown');
             }
             function start_stop() {
 		if (start_txt.innerHTML == "Start") {
