@@ -104,9 +104,9 @@
                 var time_box = document.getElementById('Time');
                 var pace_box = document.getElementById('Pace');
 		var now = new Date();
-		h = Math.round(elapsed/3600);
+		h = Math.floor(elapsed/3600);
 		if (h < 10) h="0"+h;
-		m = Math.round((elapsed%3600)/60);;
+		m = Math.floor((elapsed%3600)/60);;
 		if (m < 10) m="0"+m;
 		s = elapsed%60;
 		s = s.toFixed(0);
@@ -125,12 +125,9 @@
 		pace_str_royal = m+":"+s;
 		distance *= 1.609;
 		distance = distance.toFixed(3)
-		pace = Math.round(elapsed/distance)
-		pace = pace.toFixed(3);
-		m = pace/60.0;
-		m = m.toFixed(0);
-		s = pace%60;
-		s = s.toFixed(0);
+		pace = elapsed/distance
+		m = Math.floor(pace/60);
+		s = Math.floor(pace%60);
 		pace_str_metrics = m+":"+s;
 		pace_box.innerHTML = pace_str_royal + "/mile (" + pace_str_metrics + "/km)";
             }
