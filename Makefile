@@ -7,4 +7,4 @@ ui: nginx/index.html
 pkg:
 	./crt-pkg.sh VERSION=${VERSION}
 install:
-	sudo dpkg -i lap-counter-${VERSION}-armhf.deb
+	sudo dpkg -i backyard-surv-${VERSION}-armhf.deb
