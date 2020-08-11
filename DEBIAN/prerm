@@ -1,8 +1,8 @@
 #!/bin/bash
-systemctl stop backyard-surv
-systemctl disable backyard-surv
+systemctl stop bird-watcher
+systemctl disable bird-watcher
 #if [[ -f $COMPOSER ]]; then
-        #docker-compose -f /usr/local/bin/backyard/surv/docker-compose.yml down
+        #docker-compose -f /usr/local/bin/bird-watcher/docker-compose.yml down
 #fi
-rm -rf /usr/local/bin/backyard/surv 
+rm -rf /usr/local/bin/bird-watcher/
 exit 0

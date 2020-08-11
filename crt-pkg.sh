@@ -1,17 +1,18 @@
 #!/bin/bash
 eval $1
-PKG_NAME=backyard-surv-${VERSION}-armhf.deb
+PKG_NAME=bird-watcher-${VERSION}-armhf.deb
 DEB_PKG_BUILD_DIR=./pkg-build-dir
-PKG_ROOT=/usr/local/bin/backyard/surv
+PKG_ROOT=/usr/local/bin/bird-watcher
 SYSTEMD_DIR=/etc/systemd/system
 
 mkdir -p $DEB_PKG_BUILD_DIR/$PKG_ROOT $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
-cp CamMotionCV.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp LapCounterByCamCV.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp backyard-surv.sh $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp backyard-surv.conf $DEB_PKG_BUILD_DIR/$PKG_ROOT
-cp backyard-surv.service $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
-cp nginx/index.html $DEB_PKG_BUILD_DIR/$PKG_ROOT
+#cp CamMotionCV.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
+#cp LapCounterByCamCV.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
+cp bird-watcher.py $DEB_PKG_BUILD_DIR/$PKG_ROOT
+cp bird-watcher.sh $DEB_PKG_BUILD_DIR/$PKG_ROOT
+cp bird-watcher.conf $DEB_PKG_BUILD_DIR/$PKG_ROOT
+cp bird-watcher.service $DEB_PKG_BUILD_DIR/$SYSTEMD_DIR
+#cp nginx/index.html $DEB_PKG_BUILD_DIR/$PKG_ROOT
 #sed -E -e "/(build|context|dockerfile):/d" nginx/docker-compose.yml > $DEB_PKG_BUILD_DIR/$PKG_ROOT/docker-compose.yml
 #cp nginx/Cheer.wav $DEB_PKG_BUILD_DIR/$PKG_ROOT
 cp -r DEBIAN $DEB_PKG_BUILD_DIR

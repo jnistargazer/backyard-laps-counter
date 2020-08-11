@@ -5,11 +5,12 @@ import time, os, sys, argparse
 import cv2
 
 class MotionDetector:
-    def __init__(self, min_area=20, show=False):
+    def __init__(self, min_area=20, show=False, output="/var/birding/capture"):
         self.show = show
         self.min_area = min_area
         self.prevGrayedFrame = None
         self.vs = cv2.VideoCapture(0)
+        self.output = output
         time.sleep(2.0)
         if not self.vs.isOpened():
             print("Camera is not opened")
@@ -46,11 +47,10 @@ class MotionDetector:
         (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = 28
-        cap_path = "./capture" 
-        os.makedirs(cap_path, exist_ok = True)
+        os.makedirs(self.output, exist_ok = True)
         timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
         video_cap = cv2.VideoWriter(
-                  "{}/bird-{}.avi".format(cap_path,timestamp),
+                  "{}/bird-{}.avi".format(self.output,timestamp),
                   fourcc, fps, (w,h))
         T0 = 0
         event = 0
@@ -130,6 +130,8 @@ if __name__ == "__main__":
         show = True
     if args.get("sensitivity", None):
         sensitivity = args.get("sensitivity")
+    if args.get("output", None):
+        output = args.get("output")
 
-    motion_sensor = MotionDetector(min_area=sensitivity, show=show)
+    motion_sensor = MotionDetector(min_area=sensitivity, show=show, output=output)
     motion_sensor.detect_motion()
