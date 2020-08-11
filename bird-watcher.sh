@@ -15,6 +15,9 @@ if [[ -f $PIDFILE ]]; then
    if ps -p $(cat $PIDFILE); then
 	echo "bird-watcher is running"
         exit 0
+   else
+        echo "Stale PID file found. Removed."
+        rm -f $PIDFILE
    fi
 fi
 
