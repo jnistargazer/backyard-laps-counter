@@ -5,9 +5,10 @@ import time, os, sys, argparse
 import cv2
 
 class MotionDetector:
-    def __init__(self, min_area=20, show=False, output="/var/birding/capture"):
+    def __init__(self, min_area=20, record_len=5, show=False, output="/var/birding/capture"):
         self.show = show
         self.min_area = min_area
+        self.record_len = record_len
         self.prevGrayedFrame = None
         self.vs = cv2.VideoCapture(0)
         self.output = output
@@ -85,7 +86,7 @@ class MotionDetector:
                     event += 1
                     num_frames = 0
 
-            if T0 > 0 and T - T0 <= 10:  
+            if T0 > 0 and T - T0 <= self.record_len:  
                 # Keep recording 10s
                 cv2.putText(frame,"Event #{} @ {}".format(event, DT0),
                       (10, frame.shape[0] - 25),
@@ -122,6 +123,7 @@ if __name__ == "__main__":
     aparser.add_argument("-v", "--show", nargs="?", const="yes", default="no", help="Show video")
     aparser.add_argument("-o", "--output", default="./", help="video output dir")
     aparser.add_argument("-s", "--sensitivity", type=int, default=200, help="Motion detection sensitity (smaller number means more sensitive)")
+    aparser.add_argument("-l", "--record-length", type=int, default=5, help="Video record length (in seconds) when motion detected")
     args = vars(aparser.parse_args())
     print(args)
     show = False
@@ -132,6 +134,8 @@ if __name__ == "__main__":
         sensitivity = args.get("sensitivity")
     if args.get("output", None):
         output = args.get("output")
+    if args.get("record-length", 5):
+        record_len = args.get("record-length")
 
-    motion_sensor = MotionDetector(min_area=sensitivity, show=show, output=output)
+    motion_sensor = MotionDetector(min_area=sensitivity, show=show, output=output, record_len=record_len)
     motion_sensor.detect_motion()
