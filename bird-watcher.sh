@@ -15,9 +15,6 @@ if [[ -f $PIDFILE ]]; then
    if ps -p $(cat $PIDFILE); then
 	echo "bird-watcher is running"
         exit 0
-   else
-        echo "Stale PID file found. Removed."
-        rm -f $PIDFILE
    fi
 fi
 
@@ -28,8 +25,7 @@ conf=$(python3 << PY
 import json
 with open("$CONF") as fp:
    conf = json.load(fp)
-   print('SENSITIVITY={}\nRECORD_LEN={}\nSHOW={}\nOUTPUT={}'.format(conf.get('sensitivity',50),conf.get('record-length',5),
-           conf.get('show','false'), conf.get('output','./')))
+   print('SENSITIVITY={}\nRECORD_LEN={}\nSHOW={}\nOUTPUT={}'.format(conf.get('sensitivity',50),conf.get('record-length',5), conf.get('show','false'), conf.get('output','./')))
 PY
 )
 echo "$conf"
@@ -38,7 +34,12 @@ eval "$conf"
 LD_PRELOAD=${LD_PRELOAD:-""}
 export LD_PRELOAD=$LD_PRELOAD:/usr/lib/arm-linux-gnueabihf/libatomic.so.1
 export DISPLAY=${1:-"localhost:0.0"}
-python3 $MYPATH/bird-watcher.py --show $SHOW --sensitivity $SENSITIVITY --output $OUTPUT --record-length=$RECORD_LEN &
+
+python3 $MYPATH/bird-watcher.py \
+        --show $SHOW \
+        --sensitivity $SENSITIVITY \
+        --output $OUTPUT \
+        --record-length $RECORD_LEN &
 echo $! > $PIDFILE
 echo "PID file = $PIDFILE"
 echo "CONF file = $CONF"

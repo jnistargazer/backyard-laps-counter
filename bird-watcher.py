@@ -125,17 +125,21 @@ if __name__ == "__main__":
     aparser.add_argument("-s", "--sensitivity", type=int, default=200, help="Motion detection sensitity (smaller number means more sensitive)")
     aparser.add_argument("-l", "--record-length", type=int, default=5, help="Video record length (in seconds) when motion detected")
     args = vars(aparser.parse_args())
-    print(args)
     show = False
     sensitivity = 50
+    record_len = 5
     if args.get("show", "false") in ["true", "yes", "True", "Yes"]:
         show = True
     if args.get("sensitivity", None):
         sensitivity = args.get("sensitivity")
     if args.get("output", None):
         output = args.get("output")
-    if args.get("record-length", 5):
-        record_len = args.get("record-length")
+    if args.get("record_length", None):
+        record_len = args.get("record_length")
 
-    motion_sensor = MotionDetector(min_area=sensitivity, show=show, output=output, record_len=record_len)
+    print("SHOW: {}, SENSITIVITY: {}, OUTPUT DIR: {}, RECORD-LENGTH: {}".format(show, sensitivity, output, record_len))
+    motion_sensor = MotionDetector(min_area=sensitivity,
+                                   show=show,
+                                   output=output,
+                                   record_len=record_len)
     motion_sensor.detect_motion()
