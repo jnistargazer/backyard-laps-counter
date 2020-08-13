@@ -46,6 +46,7 @@ class MotionDetector:
         timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
         (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        fps = 24
         video_clip = cv2.VideoWriter(
                   "{}/bird-{}.avi".format(self.output,timestamp),
                   fourcc, fps, (w,h))
@@ -57,18 +58,18 @@ class MotionDetector:
                 video_clip.write(f)
             num_frames = 0
             quit = False
-            timestamp = datetime.datetime.fromtimestamp(T0).strftime("%m/%d/%Y %I:%M:%S%p")
-            while T0 > 0 and T - T0 <= self.record_len:  
+            T = T0
+            while T - T0 <= self.record_len:  
                 # Keep recording 10s
+                timestamp = datetime.datetime.fromtimestamp(T0).strftime("%m/%d/%Y %I:%M:%S%p")
+                ret,frame = self.vs.read()
                 cv2.putText(frame,"Event #{} @ {}".format(self.event, timestamp),
                       (10, frame.shape[0] - 25),
                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
                 video_clip.write(frame)
                 num_frames += 1
-                ret,frame = self.vs.read()
                 self.show_frame("main", frame)
                 T = time.time()
-                timestamp = datetime.datetime.fromtimestamp(T).strftime("%m/%d/%Y %I:%M:%S%p")
                 # show the frame and record if the user presses a key
                 key = cv2.waitKey(1) & 0xFF
                 # if the `q` key is pressed, break from the lop
@@ -76,8 +77,8 @@ class MotionDetector:
                     quit = True
                     break
 
-            if num_frames > 0:
-                print("Event #{}: {} frames recorded".format(self.event,num_frames))
+            print("Event #{}: {} frames recorded".format(self.event,num_frames))
+            video_clip.release()
             return quit
 
     def detect_motion(self):
@@ -86,7 +87,6 @@ class MotionDetector:
         # initialize the first frame in the video stream
         lap=0
         is_a_lap = False
-        fps = 28
         os.makedirs(self.output, exist_ok = True)
         T0 = 0
         self.event = 0
@@ -135,8 +135,6 @@ class MotionDetector:
             quit = False
             if T0 > 0:
                 quit = self.record_motion(T0, leading_frames)
-                video_clip.release()
-                video_clip = None
                 leading_frames = []
                 T0 = 0
 
