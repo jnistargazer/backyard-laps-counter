@@ -9,7 +9,6 @@ class MotionDetector:
         self.show = show
         self.min_area = min_area
         self.record_len = record_len
-        self.prevGrayedFrame = None
         self.vs = cv2.VideoCapture(0)
         self.output = output
         time.sleep(2.0)
@@ -17,11 +16,10 @@ class MotionDetector:
             print("Camera is not opened")
             sys.exit(1)
 
-    def motion_detected(self, frame, gray, timestamp):
-        frame = imutils.resize(frame, width=500)
+    def motion_detected(self, curr, prev):
         # compute the absolute difference between the current frame and
         # first frame
-        delta = cv2.absdiff(self.prevGrayedFrame, gray)
+        delta = cv2.absdiff(prev, curr)
         thresh = cv2.threshold(delta, 20, 255, cv2.THRESH_BINARY)[1]
         # dilate the thresholded image to fill in holes, then find contours
         # on thresholded image
@@ -35,12 +33,17 @@ class MotionDetector:
             # if the contour is too small, ignore it
             if cv2.contourArea(c) < self.min_area:
                 continue
+            motion = True
             timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
             cv2.imwrite("{}/bird-{}.jpg".format(self.output,timestamp), thresh)
-            motion = True
+            cv2.imwrite("{}/bird-{}-a.jpg".format(self.output,timestamp), prev)
+            cv2.imwrite("{}/bird-{}-b.jpg".format(self.output,timestamp), curr)
             break
         return (motion, thresh, delta)
 
+    def show_frame(self, frame):
+        if self.show:
+            cv2.imshow("Scene", frame)
     def detect_motion(self):
         # loop over the frames of the video
         motion_start = False
@@ -58,29 +61,31 @@ class MotionDetector:
         T0 = 0
         event = 0
         num_frames = 0
-        while True:
+        prev_5_frames = []
+        quit = False
+        prevGrayedFrame = None
+        while not quit:
             # grab the current frame
             T = time.time()
             DT = datetime.datetime.fromtimestamp(T).strftime("%A %d %B %Y %I:%M:%S%p")
             ret,frame = self.vs.read()
+            
             cv2.putText(frame,"{}".format(DT),
                 (10, frame.shape[0] - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
-            # resize the frame, convert it to grayscale, and blur it
-            # if the first frame is None, initialize it
-            if self.prevGrayedFrame is None:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-                gray = cv2.GaussianBlur(gray, (21, 21), 0)
-                self.prevGrayedFrame = gray
-                continue
+            self.show_frame(frame)
             if T0 == 0:
-                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                # resize the frame, convert it to grayscale, and blur it
+                frame_resized = imutils.resize(frame, width=500)
+                gray = cv2.cvtColor(frame_resized, cv2.COLOR_BGR2GRAY)
                 gray = cv2.GaussianBlur(gray, (21, 21), 0)
-                motion,thresh,delta = self.motion_detected(frame, gray, timestamp)
-            else:
-                pass
-                # We do not do motion detection when recording is going on
-            self.prevGrayedFrame = gray
+                if prevGrayedFrame is None:
+                    # if the first frame is None, initialize it
+                    prevGrayedFrame = gray
+                    continue
+                else:
+                    prevGrayedFrame = gray
+                motion,thresh,delta = self.motion_detected(gray,prevGrayedFrame)
 
             if motion:
                 # Start recording timer if it isn't running
@@ -89,33 +94,42 @@ class MotionDetector:
                     DT0 = datetime.datetime.fromtimestamp(T).strftime("%m/%d/%Y %I:%M:%S%p")
                     event += 1
                     num_frames = 0
+                    for f in prev_5_frames:
+                        video_cap.write(f)
+                        num_frames += 1
+                    prev_5_frames = []
+            else:
+                if len(prev_5_frames) == 5:
+                    prev_5_frames = prev_5_frames[1:5]
+                prev_5_frames.append(frame)
 
-            if T0 > 0 and T - T0 <= self.record_len:  
+            while T0 > 0 and T - T0 <= self.record_len:  
                 # Keep recording 10s
                 cv2.putText(frame,"Event #{} @ {}".format(event, DT0),
                       (10, frame.shape[0] - 25),
                       cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
                 video_cap.write(frame)
                 num_frames += 1
-            elif T0 > 0:
-                # If we come here, we know we have finished a 10s recording
-                # Turn off the timer
-                T0 = 0
+                ret,frame = self.vs.read()
+                self.show_frame(frame)
+                T = time.time()
+                # show the frame and record if the user presses a key
+                key = cv2.waitKey(1) & 0xFF
+                # if the `q` key is pressed, break from the lop
+                if key == ord("q"):
+                    quit = True
+                    break
+            T0 = 0
+            if num_frames > 0:
                 print("Event #{}: {} frames recorded".format(event,num_frames))
                 num_frames = 0
-            else:
-                # No motion detected as the timer is not started
-                pass
 
-            # show the frame and record if the user presses a key
-            if self.show:
-                cv2.imshow("Scene", frame)
-                #cv2.imshow("Thresh", thresh)
-                #cv2.imshow("Diff", delta)
-            key = cv2.waitKey(1) & 0xFF
-            # if the `q` key is pressed, break from the lop
-            if key == ord("q"):
-                break
+            if quit is not True:
+                # show the frame and record if the user presses a key
+                key = cv2.waitKey(1) & 0xFF
+                # if the `q` key is pressed, break from the lop
+                if key == ord("q"):
+                    quit = True
         # cleanup the camera and close any open windows
         if video_cap is not None:
             video_cap.release()
