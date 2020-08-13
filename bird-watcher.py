@@ -41,27 +41,58 @@ class MotionDetector:
     def show_frame(self, name, frame):
         if self.show:
             cv2.imshow(name, frame)
+
+     def create_video_clip(self):
+        timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
+        (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        video_clip = cv2.VideoWriter(
+                  "{}/bird-{}.avi".format(self.output,timestamp),
+                  fourcc, fps, (w,h))
+        return video_clip
+
+    def record_motion(self, T0, leading_frames)
+            video_clip = self.create_video_clip()
+            for f in leading_frames:
+                video_clip.write(f)
+            num_frames = 0
+            quit = False
+            timestamp = datetime.datetime.fromtimestamp(T0).strftime("%m/%d/%Y %I:%M:%S%p")
+            while T0 > 0 and T - T0 <= self.record_len:  
+                # Keep recording 10s
+                cv2.putText(frame,"Event #{} @ {}".format(self.event, timestamp),
+                      (10, frame.shape[0] - 25),
+                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
+                video_clip.write(frame)
+                num_frames += 1
+                ret,frame = self.vs.read()
+                self.show_frame("main", frame)
+                T = time.time()
+                timestamp = datetime.datetime.fromtimestamp(T).strftime("%m/%d/%Y %I:%M:%S%p")
+                # show the frame and record if the user presses a key
+                key = cv2.waitKey(1) & 0xFF
+                # if the `q` key is pressed, break from the lop
+                if key == ord("q"):
+                    quit = True
+                    break
+
+            if num_frames > 0:
+                print("Event #{}: {} frames recorded".format(self.event,num_frames))
+            return quit
+
     def detect_motion(self):
         # loop over the frames of the video
         motion_start = False
         # initialize the first frame in the video stream
         lap=0
         is_a_lap = False
-        (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         fps = 28
         os.makedirs(self.output, exist_ok = True)
-        timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
-        video_cap = cv2.VideoWriter(
-                  "{}/bird-{}.avi".format(self.output,timestamp),
-                  fourcc, fps, (w,h))
         T0 = 0
-        event = 0
-        num_frames = 0
-        prev_5_frames = []
-        quit = False
+        self.event = 0
+        leading_frames = []
         prevGrayedFrame = None
-        while not quit:
+        while True:
             # grab the current frame
             T = time.time()
             DT = datetime.datetime.fromtimestamp(T).strftime("%A %d %B %Y %I:%M:%S%p")
@@ -94,48 +125,31 @@ class MotionDetector:
                     cv2.imwrite("{}/bird-{}-a.jpg".format(self.output,timestamp), gray)
                     cv2.imwrite("{}/bird-{}-b.jpg".format(self.output,timestamp), prevGrayedFrame)
                     T0 = T
-                    DT0 = datetime.datetime.fromtimestamp(T).strftime("%m/%d/%Y %I:%M:%S%p")
-                    event += 1
-                    num_frames = 0
-                    for f in prev_5_frames:
-                        video_cap.write(f)
-                        num_frames += 1
-                    prev_5_frames = []
+                    self.event += 1
             else:
-                if len(prev_5_frames) == 5:
-                    prev_5_frames = prev_5_frames[1:5]
-                prev_5_frames.append(frame)
+                # We keep up to 5 frames prior to motion detected
+                if len(leading_frames) == 5:
+                    leading_frames = leading_frames[1:5]
 
-            while T0 > 0 and T - T0 <= self.record_len:  
-                # Keep recording 10s
-                cv2.putText(frame,"Event #{} @ {}".format(event, DT0),
-                      (10, frame.shape[0] - 25),
-                      cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
-                video_cap.write(frame)
-                num_frames += 1
-                ret,frame = self.vs.read()
-                self.show_frame("main", frame)
-                T = time.time()
+            leading_frames.append(frame)
+
+            if T0 > 0:
+                quit = self.record_motion(T0, leading_frames)
+                video_clip.release()
+                video_clip = None
+                leading_frames = []
+                T0 = 0
+
+            if quit:
+                break
+            else:
                 # show the frame and record if the user presses a key
                 key = cv2.waitKey(1) & 0xFF
                 # if the `q` key is pressed, break from the lop
                 if key == ord("q"):
-                    quit = True
                     break
-            T0 = 0
-            if num_frames > 0:
-                print("Event #{}: {} frames recorded".format(event,num_frames))
-                num_frames = 0
 
-            if quit is not True:
-                # show the frame and record if the user presses a key
-                key = cv2.waitKey(1) & 0xFF
-                # if the `q` key is pressed, break from the lop
-                if key == ord("q"):
-                    quit = True
         # cleanup the camera and close any open windows
-        if video_cap is not None:
-            video_cap.release()
         self.vs.release()
         cv2.destroyAllWindows()
 
