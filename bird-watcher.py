@@ -17,7 +17,7 @@ class MotionDetector:
             print("Camera is not opened")
             sys.exit(1)
 
-    def motion_detected(self, frame, gray):
+    def motion_detected(self, frame, gray, timestamp):
         frame = imutils.resize(frame, width=500)
         # compute the absolute difference between the current frame and
         # first frame
@@ -35,6 +35,8 @@ class MotionDetector:
             # if the contour is too small, ignore it
             if cv2.contourArea(c) < self.min_area:
                 continue
+            timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
+            cv2.imwrite("{}/bird-{}.jpg".format(self.output,timestamp), thresh)
             motion = True
             break
         return (motion, thresh, delta)
@@ -65,14 +67,16 @@ class MotionDetector:
                 (10, frame.shape[0] - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
             # resize the frame, convert it to grayscale, and blur it
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (21, 21), 0)
             # if the first frame is None, initialize it
             if self.prevGrayedFrame is None:
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                gray = cv2.GaussianBlur(gray, (21, 21), 0)
                 self.prevGrayedFrame = gray
                 continue
             if T0 == 0:
-                motion,thresh,delta = self.motion_detected(frame, gray)
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+                gray = cv2.GaussianBlur(gray, (21, 21), 0)
+                motion,thresh,delta = self.motion_detected(frame, gray, timestamp)
             else:
                 pass
                 # We do not do motion detection when recording is going on
