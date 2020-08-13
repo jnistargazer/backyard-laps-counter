@@ -132,7 +132,7 @@ class MotionDetector:
                     leading_frames = leading_frames[1:5]
 
             leading_frames.append(frame)
-
+            quit = False
             if T0 > 0:
                 quit = self.record_motion(T0, leading_frames)
                 video_clip.release()
