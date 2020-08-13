@@ -51,7 +51,7 @@ class MotionDetector:
                   fourcc, fps, (w,h))
         return video_clip
 
-    def record_motion(self, T0, leading_frames)
+    def record_motion(self, T0, leading_frames):
             video_clip = self.create_video_clip()
             for f in leading_frames:
                 video_clip.write(f)
