@@ -42,7 +42,7 @@ class MotionDetector:
         if self.show:
             cv2.imshow(name, frame)
 
-     def create_video_clip(self):
+    def create_video_clip(self):
         timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
         (w,h) = (int(self.vs.get(3)), int(self.vs.get(4)))
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
