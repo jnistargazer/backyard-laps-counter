@@ -16,9 +16,10 @@ class MotionDetector:
             print("Camera is not opened")
             sys.exit(1)
 
-    def motion_detected(self, curr, prev):
+    def do_motion_detection(self, curr, prev):
         # compute the absolute difference between the current frame and
         # first frame
+        
         delta = cv2.absdiff(prev, curr)
         thresh = cv2.threshold(delta, 20, 255, cv2.THRESH_BINARY)[1]
         # dilate the thresholded image to fill in holes, then find contours
@@ -34,16 +35,12 @@ class MotionDetector:
             if cv2.contourArea(c) < self.min_area:
                 continue
             motion = True
-            timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
-            cv2.imwrite("{}/bird-{}.jpg".format(self.output,timestamp), thresh)
-            cv2.imwrite("{}/bird-{}-a.jpg".format(self.output,timestamp), prev)
-            cv2.imwrite("{}/bird-{}-b.jpg".format(self.output,timestamp), curr)
             break
         return (motion, thresh, delta)
 
-    def show_frame(self, frame):
+    def show_frame(self, name, frame):
         if self.show:
-            cv2.imshow("Scene", frame)
+            cv2.imshow(name, frame)
     def detect_motion(self):
         # loop over the frames of the video
         motion_start = False
@@ -73,7 +70,7 @@ class MotionDetector:
             cv2.putText(frame,"{}".format(DT),
                 (10, frame.shape[0] - 10),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.35, (255, 255, 255), 1)
-            self.show_frame(frame)
+            self.show_frame("main", frame)
             if T0 == 0:
                 # resize the frame, convert it to grayscale, and blur it
                 frame_resized = imutils.resize(frame, width=500)
@@ -83,13 +80,19 @@ class MotionDetector:
                     # if the first frame is None, initialize it
                     prevGrayedFrame = gray
                     continue
-                else:
-                    prevGrayedFrame = gray
-                motion,thresh,delta = self.motion_detected(gray,prevGrayedFrame)
+                motion,thresh,delta = self.do_motion_detection(gray,prevGrayedFrame)
+                prevGrayedFrame = gray
+                self.show_frame("gray", gray)
+                self.show_frame("delta", delta)
+                self.show_frame("thresh", thresh)
 
             if motion:
                 # Start recording timer if it isn't running
                 if T0 == 0:
+                    timestamp = datetime.datetime.now().strftime("%m%d%Y-%I:%M:%S%p")
+                    cv2.imwrite("{}/bird-{}.jpg".format(self.output,timestamp), thresh)
+                    cv2.imwrite("{}/bird-{}-a.jpg".format(self.output,timestamp), gray)
+                    cv2.imwrite("{}/bird-{}-b.jpg".format(self.output,timestamp), prevGrayedFrame)
                     T0 = T
                     DT0 = datetime.datetime.fromtimestamp(T).strftime("%m/%d/%Y %I:%M:%S%p")
                     event += 1
@@ -111,7 +114,7 @@ class MotionDetector:
                 video_cap.write(frame)
                 num_frames += 1
                 ret,frame = self.vs.read()
-                self.show_frame(frame)
+                self.show_frame("main", frame)
                 T = time.time()
                 # show the frame and record if the user presses a key
                 key = cv2.waitKey(1) & 0xFF

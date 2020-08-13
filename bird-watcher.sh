@@ -33,7 +33,7 @@ eval "$conf"
 # This is a hack. Should be removed if the lib can be found automatically
 LD_PRELOAD=${LD_PRELOAD:-""}
 export LD_PRELOAD=$LD_PRELOAD:/usr/lib/arm-linux-gnueabihf/libatomic.so.1
-export DISPLAY=${1:-"localhost:0.0"}
+#export DISPLAY=${1:-"localhost:0.0"}
 
 python3 $MYPATH/bird-watcher.py \
         --show $SHOW \
